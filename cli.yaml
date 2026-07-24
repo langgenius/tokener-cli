@@ -1,0 +1,21 @@
+cli:
+  name: tokener
+  short: "Command-line tool for the Tokener.ai console management API"
+
+auth:
+  validate:
+    method: GET
+    path: /api/v1/whoami
+    display:
+      username_field: email
+      fallback_field: userId
+
+skill:
+  root: skills
+  bundle: true
+
+update:
+  github:
+    owner: langgenius
+    repo: tokener-cli
+    asset: "tokener_{{ .Version }}_{{ .OS }}_{{ .Arch }}.tar.gz"

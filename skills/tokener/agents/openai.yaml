@@ -1,0 +1,4 @@
+interface:
+  display_name: "tokener CLI"
+  short_description: "Use the tokener generated CLI"
+  default_prompt: "Use $tokener to find and run the right tokener command."

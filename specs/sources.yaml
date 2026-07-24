@@ -1,0 +1,8 @@
+sources:
+  console:
+    display_name: Tokener.ai Console Management API
+    local_path: ../spec
+    default_hostname: https://console.tokener.ai
+    backend: openapi3
+    openapi3:
+      files: [v1.yaml]
