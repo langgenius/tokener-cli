@@ -3,7 +3,6 @@
 ## Source
 
 - Backend: `openapi3`
-- Default hostname: `console.tokener.ai`
 - Repository: `unknown`
 - Pinned tag: ``unknown``
 - Files: `v1.yaml`
