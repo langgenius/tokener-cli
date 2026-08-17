@@ -60,6 +60,7 @@
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
+- Output: response media `application/json`
 
 ### `tokener keys list`
 

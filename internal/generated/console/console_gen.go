@@ -8,7 +8,7 @@ import (
 	"github.com/lathe-cli/lathe/pkg/runtime"
 )
 
-const generatedSchemaVersion = 9
+const generatedSchemaVersion = 11
 
 func Mount(root *cobra.Command) error {
 	if err := runtime.AssertSchema(generatedSchemaVersion); err != nil {
@@ -45,10 +45,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "cursor (query)", Required: false},
 			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "limit (query)", Required: false},
 		},
-		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"type", "id", "amountUsdMicro", "description", "occurredAt", "sourceType"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{
-			Strategy: "cursor", TokenParam: "cursor", LimitParam: "limit",
-		},
-		},
+		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"type", "id", "amountUsdMicro", "description", "occurredAt", "sourceType"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
 	},
 	{
 		Group:       "billing",
@@ -61,10 +58,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "cursor (query)", Required: false},
 			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "limit (query)", Required: false},
 		},
-		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"id", "amountCents", "createdAt", "creditAmountUsdMicro", "currency", "invoiceUrl"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{
-			Strategy: "cursor", TokenParam: "cursor", LimitParam: "limit",
-		},
-		},
+		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"id", "amountCents", "createdAt", "creditAmountUsdMicro", "currency", "invoiceUrl"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
 	},
 	{
 		Group:       "identity",
@@ -85,8 +79,9 @@ var Specs = []runtime.CommandSpec{
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{}, "budgetDuration": &runtime.SchemaSpec{}, "expiresAt": &runtime.SchemaSpec{}, "maxBudgetUsd": &runtime.SchemaSpec{}, "maxParallelRequests": &runtime.SchemaSpec{}, "rpmLimit": &runtime.SchemaSpec{}, "tpmLimit": &runtime.SchemaSpec{}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
+			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
 		},
+		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
 	},
 	{
 		Group:       "keys",
@@ -95,8 +90,7 @@ var Specs = []runtime.CommandSpec{
 		OperationID: "list",
 		Method:      "GET",
 		PathTpl:     "/api/v1/keys",
-		Output: runtime.OutputHints{ListPath: "keys", DefaultColumns: []string{"name", "id", "createdAt", "lastUsedAt", "prefix", "spend30d"}, ResponseMediaType: "application/json",
-		},
+		Output:      runtime.OutputHints{ListPath: "keys", DefaultColumns: []string{"name", "id", "createdAt", "lastUsedAt", "prefix", "spend30d"}, ResponseMediaType: "application/json"},
 	},
 	{
 		Group:       "keys",
@@ -140,7 +134,7 @@ var Specs = []runtime.CommandSpec{
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{}, "budgetDuration": &runtime.SchemaSpec{}, "expiresAt": &runtime.SchemaSpec{}, "maxBudgetUsd": &runtime.SchemaSpec{}, "maxParallelRequests": &runtime.SchemaSpec{}, "rpmLimit": &runtime.SchemaSpec{}, "tpmLimit": &runtime.SchemaSpec{}}},
+			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}},
 		},
 		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
 	},
@@ -151,8 +145,7 @@ var Specs = []runtime.CommandSpec{
 		OperationID: "catalog",
 		Method:      "GET",
 		PathTpl:     "/api/v1/models",
-		Output: runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"name", "id", "cachePer1m", "category", "context", "inputPer1m"}, ResponseMediaType: "application/json",
-		},
+		Output:      runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"name", "id", "cachePer1m", "category", "context", "inputPer1m"}, ResponseMediaType: "application/json"},
 	},
 	{
 		Group:       "usage",
@@ -165,8 +158,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "range (query, one of: 7|30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
 			{Name: "by", Flag: "by", In: "query", GoType: "string", Help: "by (query, one of: model)", Required: false, Default: "model", Enum: []string{"model"}},
 		},
-		Output: runtime.OutputHints{ListPath: "rows", DefaultColumns: []string{"key", "requests", "spendUsdMicro", "tokens"}, ResponseMediaType: "application/json",
-		},
+		Output: runtime.OutputHints{ListPath: "rows", DefaultColumns: []string{"key", "requests", "spendUsdMicro", "tokens"}, ResponseMediaType: "application/json"},
 	},
 	{
 		Group:       "usage",
@@ -178,8 +170,7 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "range (query, one of: 7|30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
 		},
-		Output: runtime.OutputHints{ListPath: "points", DefaultColumns: []string{"day", "requests", "spendUsdMicro", "tokens"}, ResponseMediaType: "application/json",
-		},
+		Output: runtime.OutputHints{ListPath: "points", DefaultColumns: []string{"day", "requests", "spendUsdMicro", "tokens"}, ResponseMediaType: "application/json"},
 	},
 	{
 		Group:       "usage",

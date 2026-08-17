@@ -1,4 +1,4 @@
-LATHE_VERSION ?= v0.4.5
+LATHE_VERSION ?= v0.6.0
 
 .PHONY: cli-sync cli-build test check
 
