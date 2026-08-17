@@ -12,8 +12,7 @@ Tokener.ai API key, not to this CLI.
 
 | Path | Owner |
 | --- | --- |
-| `spec/v1.yaml` | vendored upstream OpenAPI contract (see `spec/SOURCE.md`) |
-| `specs/sources.yaml` | spec source declaration for `lathe specsync` |
+| `specs/sources.yaml` | spec source declaration for `lathe specsync`, pinned to an upstream tag |
 | `cli.yaml` | generated CLI identity, auth validation, skill, and update config |
 | `cmd/tokener/main.go` | thin runtime entrypoint |
 | `internal/generated/` | generated command specs (do not edit) |

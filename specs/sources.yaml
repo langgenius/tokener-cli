@@ -1,7 +1,8 @@
 sources:
   console:
     display_name: Tokener.ai Console Management API
-    local_path: ../spec
+    repo_url: https://github.com/langgenius/ai-gateway.git
+    pinned_tag: v0.0.2-beta3
     backend: openapi3
     openapi3:
-      files: [v1.yaml]
+      files: [apps/console/openapi/v1.yaml]

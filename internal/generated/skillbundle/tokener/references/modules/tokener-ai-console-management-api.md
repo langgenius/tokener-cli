@@ -3,9 +3,10 @@
 ## Source
 
 - Backend: `openapi3`
-- Repository: `unknown`
-- Pinned tag: ``unknown``
-- Files: `v1.yaml`
+- Repository: https://github.com/langgenius/ai-gateway.git
+- Pinned tag: `v0.0.2-beta3`
+- Files: `apps/console/openapi/v1.yaml`
+- Resolved SHA: `780454479bdd398f3ade7f96d07c535b4095722d`
 
 ## billing
 
@@ -55,7 +56,7 @@
 
 ### `tokener keys create`
 
-- Summary: Create a Tokener.ai API key (returns the plaintext secret once)
+- Summary: Create a Tokener.ai API key
 - HTTP: `POST /api/v1/keys`
 - Auth: required
 - Body: required; media type `application/json`
@@ -70,6 +71,16 @@
 - Body: none
 - Flags: none
 - Output: list path `keys`; columns `name`, `id`, `createdAt`, `lastUsedAt`, `prefix`, `spend30d`; response media `application/json`
+
+### `tokener keys reveal`
+
+- Summary: Reveal an existing non-revoked key
+- HTTP: `POST /api/v1/keys/{id}/reveal`
+- Auth: required
+- Body: none
+- Flags:
+  - `--id` (path, required): id
+- Output: response media `application/json`
 
 ### `tokener keys revoke`
 
@@ -112,6 +123,148 @@
 - Flags: none
 - Output: list path `models`; columns `name`, `id`, `cachePer1m`, `category`, `context`, `inputPer1m`; response media `application/json`
 
+### `tokener models public-model-catalog`
+
+- Summary: Get the anonymous versioned machine model catalog
+- HTTP: `GET /api/public/v1/models`
+- Auth: public
+- Body: none
+- Flags: none
+- Output: list path `models`; response media `application/json`
+
+## partners
+
+### `tokener partners correct-partner-allowance-window`
+
+- Summary: Correct a Partner allowance window
+- HTTP: `POST /api/partner/v1/allowance-windows/{windowId}/corrections`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags:
+  - `--window-id` (path, required): windowId
+- Output: response media `application/json`
+
+### `tokener partners create-partner-allowance-window`
+
+- Summary: Schedule an idempotent Partner allowance window
+- HTTP: `POST /api/partner/v1/allowance-windows`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags: none
+- Output: response media `application/json`
+
+### `tokener partners get-partner-allowance-window`
+
+- Summary: Read an accepted Partner allowance window
+- HTTP: `GET /api/partner/v1/allowance-windows/{windowId}`
+- Auth: required
+- Body: none
+- Flags:
+  - `--window-id` (path, required): windowId
+  - `--external-ref` (query, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners get-partner-credit-event`
+
+- Summary: Read a posted Partner credit event
+- HTTP: `GET /api/partner/v1/credit-events/{eventId}`
+- Auth: required
+- Body: none
+- Flags:
+  - `--event-id` (path, required): eventId
+  - `--external-ref` (query, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners get-partner-organization`
+
+- Summary: Read Partner organization provisioning status
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}`
+- Auth: required
+- Body: none
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners get-partner-organization-balance`
+
+- Summary: Read a Partner organization's credit balances
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/balance`
+- Auth: required
+- Body: none
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners get-partner-organization-models`
+
+- Summary: List models callable by a Partner organization
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/models`
+- Auth: required
+- Body: none
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: list path `models`; response media `application/json`
+
+### `tokener partners get-partner-organization-usage`
+
+- Summary: Read model usage for a Partner organization
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/usage`
+- Auth: required
+- Body: none
+- Flags:
+  - `--external-ref` (path, required): externalRef
+  - `--start-date` (query, required, date): First UTC date in the usage range.
+  - `--end-date` (query, required, date): Last UTC date; cannot be in the future.
+- Output: list path `models`; response media `application/json`
+
+### `tokener partners post-partner-credit-event`
+
+- Summary: Post an idempotent Partner credit event
+- HTTP: `POST /api/partner/v1/credit-events`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags: none
+- Output: response media `application/json`
+
+### `tokener partners provision-partner-organization`
+
+- Summary: Provision a Partner organization and its initial API key
+- HTTP: `POST /api/partner/v1/organizations`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags: none
+- Output: response media `application/json`
+
+### `tokener partners revoke-partner-organization-key`
+
+- Summary: Revoke a Partner organization's model API key
+- HTTP: `DELETE /api/partner/v1/organizations/by-external-ref/{externalRef}/key`
+- Auth: required
+- Body: none
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners rotate-partner-organization-key`
+
+- Summary: Rotate a Partner organization's model API key
+- HTTP: `POST /api/partner/v1/organizations/by-external-ref/{externalRef}/key`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: response media `application/json`
+
+### `tokener partners set-partner-organization-status`
+
+- Summary: Suspend or resume a Partner organization
+- HTTP: `PATCH /api/partner/v1/organizations/by-external-ref/{externalRef}`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags:
+  - `--external-ref` (path, required): externalRef
+- Output: response media `application/json`
+
 ## usage
 
 ### `tokener usage breakdown`
@@ -122,8 +275,7 @@
 - Body: none
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): range
-  - `--by` (query, default `model`, one of: model): by
-- Output: list path `rows`; columns `key`, `requests`, `spendUsdMicro`, `tokens`; response media `application/json`
+- Output: list path `rows`; columns `cacheReadInputTokens`, `inputTokens`, `key`, `outputTokens`, `requests`, `spendUsdMicro`; response media `application/json`
 
 ### `tokener usage series`
 
