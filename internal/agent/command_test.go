@@ -79,8 +79,8 @@ func executeAgent(t *testing.T, deps dependencies, args ...string) error {
 	return command.Execute()
 }
 
-func TestAgentLaunchUsesFixedGatewayAndNativeArguments(t *testing.T) {
-	t.Setenv(credentialEnv, "environment-key")
+func TestAgentLaunchUsesBoundKeyFixedGatewayAndNativeArguments(t *testing.T) {
+	t.Setenv(credentialEnv, "ignored-environment-key")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	engine := &fakeEngine{path: "/engine/rx"}
 	binding := &fakeBinding{key: "bound-key", exists: true}
@@ -92,7 +92,7 @@ func TestAgentLaunchUsesFixedGatewayAndNativeArguments(t *testing.T) {
 	if !slices.Equal(engine.calls, []string{"codex"}) {
 		t.Fatalf("engine calls = %v", engine.calls)
 	}
-	if call.path != "/engine/rx" || call.key != "environment-key" {
+	if call.path != "/engine/rx" || call.key != "bound-key" {
 		t.Fatalf("launch path/key = %q/%q", call.path, call.key)
 	}
 	if call.request.Harness != "codex" || call.request.Gateway.Endpoint != gatewayEndpoint || call.request.Gateway.ProviderID != "tokener" {
@@ -122,7 +122,7 @@ func TestAgentWithoutHarnessLeavesHostedRequestHarnessEmpty(t *testing.T) {
 }
 
 func TestMissingKeyResolvesEngineBeforeNoninteractiveFailure(t *testing.T) {
-	t.Setenv(credentialEnv, "")
+	t.Setenv(credentialEnv, "ignored-environment-key")
 	engine := &fakeEngine{path: "/engine/rx"}
 	binding := &fakeBinding{}
 	deps, call, created := testDependencies(engine, binding)
