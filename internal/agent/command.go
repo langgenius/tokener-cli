@@ -163,7 +163,7 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 	}
 	if key == "" {
 		if !deps.interactive() {
-			return errors.New("Tokener agent key is not configured; set TOKENER_API_KEY or run `tokener agent key login`")
+			return errors.New("Tokener agent key is not configured; run `tokener agent key login`")
 		}
 		confirmed, err := confirm(deps.stdin, deps.stderr, "Create and bind a Tokener agent key now?")
 		if err != nil {
@@ -210,9 +210,6 @@ func createAndBind(ctx context.Context, deps dependencies) error {
 }
 
 func resolveAgentKey(bindings keyBinding) (string, error) {
-	if key := os.Getenv(credentialEnv); key != "" {
-		return key, nil
-	}
 	key, exists, err := bindings.Load()
 	if err != nil || !exists {
 		return "", err
