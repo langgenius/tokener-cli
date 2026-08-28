@@ -3,6 +3,7 @@
 ## Source
 
 - Backend: `openapi3`
+- Default hostname: `console.tokener.dev`
 - Repository: https://github.com/langgenius/ai-gateway.git
 - Pinned tag: `v0.0.2-beta3`
 - Files: `apps/console/openapi/v1.yaml`
