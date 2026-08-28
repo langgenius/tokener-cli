@@ -2,5 +2,6 @@
 .local/
 bin/
 coverage/
+dist/
 .env
 .DS_Store
