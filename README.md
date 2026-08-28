@@ -8,6 +8,25 @@ billing balance and ledger, usage, and the public model catalog.
 It is not the LLM data plane: model traffic goes to the Tokener Gateway with a
 Tokener.ai API key, not to this CLI.
 
+## Install
+
+Install the latest release on macOS or Linux:
+
+```sh
+curl -fsSL https://tokener.dev/install.sh | sh
+```
+
+Install with Homebrew:
+
+```sh
+brew tap langgenius/tokener https://github.com/langgenius/tokener-cli
+brew install langgenius/tokener/tokener
+```
+
+Upgrade an existing installation with `tokener update` or `brew upgrade
+tokener`, depending on how it was installed. Windows archives are available on
+the [GitHub Releases](https://github.com/langgenius/tokener-cli/releases) page.
+
 ## Layout
 
 | Path | Owner |
@@ -24,6 +43,7 @@ Tokener.ai API key, not to this CLI.
 make cli-sync    # regenerate from spec/ and cli.yaml, then go mod tidy
 make cli-build   # build bin/tokener
 make check       # cli-sync + tests + go vet
+make release-snapshot # build release artifacts without publishing
 ```
 
 `make cli-sync` runs the pinned `lathe` generator via `go run`; override the

@@ -1,7 +1,7 @@
 LATHE_VERSION ?= v0.6.0
 INSTALL_DIR ?= $(HOME)/.local/bin
 
-.PHONY: cli-sync cli-build test check
+.PHONY: cli-sync cli-build cli-install test check release-snapshot
 
 cli-sync:
 	cp cli.yaml cmd/tokener/cli.yaml
@@ -20,3 +20,6 @@ test: cli-build
 
 check: cli-sync test
 	go vet ./...
+
+release-snapshot:
+	goreleaser release --snapshot --clean
