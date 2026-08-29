@@ -27,11 +27,33 @@ commands:
     output:
       default_columns: [availableUsdMicro, purchasedAvailableUsdMicro, grantedAvailableUsdMicro, status, updatedAt]
       column_labels:
-        availableUsdMicro: "TOTAL (MICRO-USD)"
-        purchasedAvailableUsdMicro: "PURCHASED (MICRO-USD)"
-        grantedAvailableUsdMicro: "GRANTED (MICRO-USD)"
+        availableUsdMicro: TOTAL
+        purchasedAvailableUsdMicro: PURCHASED
+        grantedAvailableUsdMicro: GRANTED
         status: STATUS
         updatedAt: UPDATED
+      column_formats:
+        availableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        purchasedAvailableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        grantedAvailableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
 
   ledger:
     match:
@@ -49,11 +71,19 @@ commands:
       default_columns: [occurredAt, amountUsdMicro, type, sourceType, description, id]
       column_labels:
         occurredAt: TIME
-        amountUsdMicro: "AMOUNT (MICRO-USD)"
+        amountUsdMicro: AMOUNT
         type: TYPE
         sourceType: SOURCE
         description: DESCRIPTION
         id: ID
+      column_formats:
+        amountUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       cursor:
         help: Opaque cursor returned by the previous page
@@ -77,9 +107,17 @@ commands:
         createdAt: TIME
         status: STATUS
         amountCents: "PAID (CENTS)"
-        creditAmountUsdMicro: "CREDIT (MICRO-USD)"
+        creditAmountUsdMicro: CREDIT
         currency: CURRENCY
         id: ID
+      column_formats:
+        creditAmountUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       cursor:
         help: Opaque cursor returned by the previous page
@@ -141,9 +179,17 @@ commands:
         name: NAME
         status: STATUS
         prefix: PREFIX
-        spend30d: "SPEND 30D (MICRO-USD)"
+        spend30d: "SPEND 30D"
         lastUsedAt: "LAST USED"
         id: ID
+      column_formats:
+        spend30d:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
 
   reveal:
     match:
@@ -260,10 +306,18 @@ commands:
       column_labels:
         summary.requests: REQUESTS
         summary.tokens: TOKENS
-        summary.spendUsdMicro: "SPEND (MICRO-USD)"
+        summary.spendUsdMicro: SPEND
         summary.inputTokens: INPUT
         summary.outputTokens: OUTPUT
         summary.cacheReadInputTokens: "CACHE READ"
+      column_formats:
+        summary.spendUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -287,7 +341,15 @@ commands:
         day: DAY
         requests: REQUESTS
         tokens: TOKENS
-        spendUsdMicro: "SPEND (MICRO-USD)"
+        spendUsdMicro: SPEND
+      column_formats:
+        spendUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -313,7 +375,15 @@ commands:
         inputTokens: INPUT
         outputTokens: OUTPUT
         cacheReadInputTokens: "CACHE READ"
-        spendUsdMicro: "SPEND (MICRO-USD)"
+        spendUsdMicro: SPEND
+      column_formats:
+        spendUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -459,11 +529,40 @@ commands:
       default_columns: [externalRef, availableUsdMicro, purchasedAvailableUsdMicro, promotionalAvailableUsdMicro, allowance.availableUsdMicro, generatedAt]
       column_labels:
         externalRef: ORGANIZATION
-        availableUsdMicro: "TOTAL (MICRO-USD)"
-        purchasedAvailableUsdMicro: "PURCHASED (MICRO-USD)"
-        promotionalAvailableUsdMicro: "PROMOTIONAL (MICRO-USD)"
-        allowance.availableUsdMicro: "ALLOWANCE (MICRO-USD)"
+        availableUsdMicro: TOTAL
+        purchasedAvailableUsdMicro: PURCHASED
+        promotionalAvailableUsdMicro: PROMOTIONAL
+        allowance.availableUsdMicro: ALLOWANCE
         generatedAt: GENERATED
+      column_formats:
+        availableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        purchasedAvailableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        promotionalAvailableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        allowance.availableUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       externalRef:
         argument: external-ref
@@ -492,7 +591,15 @@ commands:
         inputTokens: INPUT
         outputTokens: OUTPUT
         cacheReadInputTokens: "CACHE READ"
-        billedUsdMicro: "SPEND (MICRO-USD)"
+        billedUsdMicro: SPEND
+      column_formats:
+        billedUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       externalRef:
         argument: external-ref
@@ -536,9 +643,17 @@ commands:
         eventId: EVENT
         externalRef: ORGANIZATION
         type: TYPE
-        amountUsdMicro: "AMOUNT (MICRO-USD)"
+        amountUsdMicro: AMOUNT
         occurredAt: TIME
         relatedEventId: RELATED
+      column_formats:
+        amountUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       eventId:
         argument: event-id
@@ -581,9 +696,17 @@ commands:
         windowId: WINDOW
         externalRef: ORGANIZATION
         status: STATUS
-        effectiveAmountUsdMicro: "AMOUNT (MICRO-USD)"
+        effectiveAmountUsdMicro: AMOUNT
         startsAt: START
         endsAt: END
+      column_formats:
+        effectiveAmountUsdMicro:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
     params:
       windowId:
         argument: window-id
