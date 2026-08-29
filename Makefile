@@ -1,7 +1,7 @@
 LATHE_VERSION ?= v0.6.1-0.20260829152256-9d4892b29474
 INSTALL_DIR ?= $(HOME)/.local/bin
 
-.PHONY: cli-sync cli-build cli-install test check ci-check release-snapshot
+.PHONY: cli-sync cli-build cli-install rx-verify test check ci-check release-snapshot
 
 cli-sync:
 	cp cli.yaml cmd/tokener/cli.yaml
@@ -15,16 +15,19 @@ cli-install: cli-build
 	mkdir -p "$(INSTALL_DIR)"
 	ln -sfn "$(CURDIR)/bin/tokener" "$(INSTALL_DIR)/tokener"
 
-test: cli-build
+rx-verify:
+	go run ./internal/cmd/rxmanifest verify
+
+test: rx-verify cli-build
 	go test ./...
 
 check: cli-sync test
 	go vet ./...
 
-ci-check:
+ci-check: rx-verify
 	go build -o bin/tokener ./cmd/tokener
 	go test ./...
 	go vet ./...
 
-release-snapshot:
+release-snapshot: rx-verify
 	goreleaser release --snapshot --clean

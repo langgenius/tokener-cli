@@ -1,5 +1,3 @@
-//go:build darwin && arm64
-
 package agent
 
 import (
@@ -11,12 +9,26 @@ import (
 	"testing"
 )
 
-func TestEmbeddedRXMatchesPinnedHashAndHostedProtocol(t *testing.T) {
-	if digest := sha256Hex(embeddedRX); digest != embeddedRXSHA256 {
+func TestEmbeddedRXMatchesSnapshotAndHostedProtocol(t *testing.T) {
+	engine := newEmbeddedEngine()
+	if len(engine.data) == 0 {
+		t.Skip("embedded rx is unavailable on this platform")
+	}
+	if engine.metadataErr != nil {
+		t.Fatal(engine.metadataErr)
+	}
+	if digest := sha256Hex(engine.data); digest != engine.digest {
 		t.Fatalf("embedded rx SHA-256 = %s", digest)
 	}
-	path := filepath.Join(t.TempDir(), "rx")
-	if err := os.WriteFile(path, embeddedRX, 0o700); err != nil {
+	if len(engine.revision) != 40 {
+		t.Fatalf("embedded rx revision = %q", engine.revision)
+	}
+	name := "rx"
+	if engine.targetOS == "windows" {
+		name += ".exe"
+	}
+	path := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(path, engine.data, 0o700); err != nil {
 		t.Fatal(err)
 	}
 	output, err := exec.Command(path, "host").Output()
@@ -30,7 +42,7 @@ func TestEmbeddedRXMatchesPinnedHashAndHostedProtocol(t *testing.T) {
 	if response.Protocol.Major != 1 || response.Protocol.Minor != 0 {
 		t.Fatalf("protocol = %d.%d", response.Protocol.Major, response.Protocol.Minor)
 	}
-	if response.Version != embeddedRXVersion {
+	if response.Version != engine.version {
 		t.Fatalf("version = %q", response.Version)
 	}
 	if !slices.Equal(response.Harnesses, harnesses) {

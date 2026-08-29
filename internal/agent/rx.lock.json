@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "source": {
+    "repository": "samzong/Recall",
+    "ref": "v0.5.7",
+    "revision": "c4f8af31393c94f67ffb4461adab71f0a72e0333",
+    "version": "0.5.7"
+  },
+  "build": {
+    "rust_toolchain": "stable",
+    "provenance": "https://github.com/langgenius/tokener-cli/pull/6"
+  },
+  "artifacts": {
+    "darwin/amd64": {
+      "path": "internal/agent/assets/rx-darwin-amd64",
+      "sha256": "468cdb7395a9b18f7450bb23a7389759c454affcdd0e79633a633ad168cfcad3"
+    },
+    "darwin/arm64": {
+      "path": "internal/agent/assets/rx",
+      "sha256": "59c15dc19142a44209f658d7f51905d9bd82afb8a67e4249af14130adca0ae39"
+    },
+    "linux/amd64": {
+      "path": "internal/agent/assets/rx-linux-amd64",
+      "sha256": "e168b4d6d4edc33a1f343d4a905c1b3ef2d8427d72142eb517a9caae052b458e"
+    },
+    "windows/amd64": {
+      "path": "internal/agent/assets/rx-windows-amd64.exe",
+      "sha256": "bd150b2629ddb0c78af9bd04fba21f2310b347889962b67cf4fe81d1cbcdb97f"
+    }
+  }
+}

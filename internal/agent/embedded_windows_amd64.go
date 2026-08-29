@@ -8,8 +8,6 @@ import _ "embed"
 var embeddedRX []byte
 
 const (
-	embeddedRXVersion = "0.5.7"
-	embeddedRXSHA256  = "bd150b2629ddb0c78af9bd04fba21f2310b347889962b67cf4fe81d1cbcdb97f"
-	embeddedRXOS      = "windows"
-	embeddedRXArch    = "amd64"
+	embeddedRXOS   = "windows"
+	embeddedRXArch = "amd64"
 )

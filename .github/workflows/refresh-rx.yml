@@ -1,0 +1,286 @@
+name: Refresh embedded rx
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Recall branch, tag, or commit
+        required: true
+        default: main
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+env:
+  RX_REPOSITORY: samzong/Recall
+  RX_RUST_TOOLCHAIN: 1.96.0
+
+concurrency:
+  group: refresh-embedded-rx
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.resolve.outputs.ref }}
+      revision: ${{ steps.resolve.outputs.revision }}
+      short_revision: ${{ steps.resolve.outputs.short_revision }}
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - id: resolve
+        name: Resolve green Recall revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          requested_ref=$(printf '%s' "$REQUESTED_REF" | xargs)
+          if [[ -z "$requested_ref" ]]; then
+            echo "::error::Recall ref is empty"
+            exit 1
+          fi
+
+          if [[ "$requested_ref" == "main" ]]; then
+            revision=""
+            mapfile -t candidates < <(gh api "repos/$RX_REPOSITORY/commits?sha=main&per_page=20" --jq '.[].sha')
+            for candidate in "${candidates[@]}"; do
+              successful_checks=$(gh api "repos/$RX_REPOSITORY/commits/$candidate/check-runs" \
+                -H "Accept: application/vnd.github+json" \
+                --jq '[.check_runs[] | select(.name == "check" and .conclusion == "success")] | length')
+              if [[ "$successful_checks" -gt 0 ]]; then
+                revision="$candidate"
+                break
+              fi
+            done
+            if [[ -z "$revision" ]]; then
+              echo "::error::No green Recall main revision found in the latest 20 commits"
+              exit 1
+            fi
+          else
+            encoded_ref=$(jq -rn --arg value "$requested_ref" '$value | @uri')
+            revision=$(gh api "repos/$RX_REPOSITORY/commits/$encoded_ref" --jq '.sha')
+            successful_checks=$(gh api "repos/$RX_REPOSITORY/commits/$revision/check-runs" \
+              -H "Accept: application/vnd.github+json" \
+              --jq '[.check_runs[] | select(.name == "check" and .conclusion == "success")] | length')
+            if [[ "$successful_checks" -eq 0 ]]; then
+              echo "::error::Recall revision $revision has no successful check run"
+              exit 1
+            fi
+          fi
+
+          cargo_toml=$(gh api "repos/$RX_REPOSITORY/contents/Cargo.toml?ref=$revision" --jq '.content' | tr -d '\n' | base64 --decode)
+          version=$(python3 -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["workspace"]["package"]["version"])' <<<"$cargo_toml")
+          if [[ -z "$version" ]]; then
+            echo "::error::Recall version is empty"
+            exit 1
+          fi
+
+          {
+            echo "ref=$requested_ref"
+            echo "revision=$revision"
+            echo "short_revision=${revision:0:12}"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved $RX_REPOSITORY $requested_ref to $revision with rx $version" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: resolve
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: rx
+            asset: rx-linux-amd64
+          - id: darwin-amd64
+            runner: macos-15
+            target: x86_64-apple-darwin
+            binary: rx
+            asset: rx-darwin-amd64
+          - id: darwin-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            binary: rx
+            asset: rx
+          - id: windows-amd64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: rx.exe
+            asset: rx-windows-amd64.exe
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ env.RX_REPOSITORY }}
+          ref: ${{ needs.resolve.outputs.revision }}
+          path: recall
+
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
+        with:
+          toolchain: ${{ env.RX_RUST_TOOLCHAIN }}
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: recall -> target
+          key: ${{ matrix.target }}
+
+      - name: Build rx
+        working-directory: recall
+        env:
+          TARGET: ${{ matrix.target }}
+        run: cargo build --locked --release --target "$TARGET" -p rx
+
+      - name: Stage and probe rx
+        shell: bash
+        working-directory: recall
+        env:
+          ASSET: ${{ matrix.asset }}
+          BINARY: ${{ matrix.binary }}
+          BUILD_ID: ${{ matrix.id }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          bundle="$GITHUB_WORKSPACE/bundle"
+          mkdir -p "$bundle"
+          cp "target/$TARGET/release/$BINARY" "$bundle/$ASSET"
+          chmod 0755 "$bundle/$ASSET"
+          "$bundle/$ASSET" host > "$bundle/host-$BUILD_ID.json"
+          rustc --version --verbose > "$bundle/rust-$BUILD_ID.txt"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: rx-${{ matrix.id }}
+          path: bundle
+          if-no-files-found: error
+          retention-days: 7
+
+  assemble:
+    needs:
+      - resolve
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: rx-*
+          path: .local/rx-snapshot
+          merge-multiple: true
+
+      - name: Validate native builds
+        env:
+          RX_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          mapfile -t host_files < <(find .local/rx-snapshot -name 'host-*.json' -type f | sort)
+          mapfile -t rust_files < <(find .local/rx-snapshot -name 'rust-*.txt' -type f | sort)
+          if [[ "${#host_files[@]}" -ne 4 || "${#rust_files[@]}" -ne 4 ]]; then
+            echo "::error::Expected four host probes and four Rust toolchain records"
+            exit 1
+          fi
+          for host_file in "${host_files[@]}"; do
+            jq -e --arg version "$RX_VERSION" '
+              .protocol.major == 1 and
+              .protocol.minor == 0 and
+              .version == $version and
+              ((.harnesses | sort) == (["claude", "codex", "dsh", "kimi", "opencode", "pi"] | sort))
+            ' "$host_file" > /dev/null
+          done
+          for rust_file in "${rust_files[@]}"; do
+            grep -Eq '^rustc 1\.96\.0 ' "$rust_file"
+          done
+
+      - name: Install rx snapshot
+        run: |
+          set -euo pipefail
+          install -m 0755 .local/rx-snapshot/rx internal/agent/assets/rx
+          install -m 0755 .local/rx-snapshot/rx-darwin-amd64 internal/agent/assets/rx-darwin-amd64
+          install -m 0755 .local/rx-snapshot/rx-linux-amd64 internal/agent/assets/rx-linux-amd64
+          install -m 0755 .local/rx-snapshot/rx-windows-amd64.exe internal/agent/assets/rx-windows-amd64.exe
+
+      - name: Write and verify snapshot lock
+        env:
+          PROVENANCE: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RX_REF: ${{ needs.resolve.outputs.ref }}
+          RX_REVISION: ${{ needs.resolve.outputs.revision }}
+          RX_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          go run ./internal/cmd/rxmanifest write \
+            --repository "$RX_REPOSITORY" \
+            --source-ref "$RX_REF" \
+            --revision "$RX_REVISION" \
+            --version "$RX_VERSION" \
+            --rust-toolchain "$RX_RUST_TOOLCHAIN" \
+            --provenance "$PROVENANCE"
+          make ci-check
+
+      - id: changes
+        name: Check snapshot changes
+        run: |
+          set -euo pipefail
+          paths=(
+            internal/agent/assets/rx
+            internal/agent/assets/rx-darwin-amd64
+            internal/agent/assets/rx-linux-amd64
+            internal/agent/assets/rx-windows-amd64.exe
+            internal/agent/rx.lock.json
+          )
+          if git diff --quiet -- "${paths[@]}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The embedded rx snapshot already matches ${{ needs.resolve.outputs.revision }}." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create snapshot pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RX_REF: ${{ needs.resolve.outputs.ref }}
+          RX_REVISION: ${{ needs.resolve.outputs.revision }}
+          RX_SHORT_REVISION: ${{ needs.resolve.outputs.short_revision }}
+          RX_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          branch="codex/rx-snapshot-$RX_SHORT_REVISION"
+          paths=(
+            internal/agent/assets/rx
+            internal/agent/assets/rx-darwin-amd64
+            internal/agent/assets/rx-linux-amd64
+            internal/agent/assets/rx-windows-amd64.exe
+            internal/agent/rx.lock.json
+          )
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
+            echo "::error::Remote branch $branch already exists"
+            exit 1
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch -c "$branch"
+          git add -- "${paths[@]}"
+          git commit -s -m "build(agent): embed rx snapshot $RX_SHORT_REVISION"
+          git push origin "$branch"
+          pr_url=$(gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "build(agent): embed rx snapshot $RX_SHORT_REVISION" \
+            --body "$(printf 'Source: %s@%s\n\nResolved revision: %s\n\nrx version: %s\n\nRust toolchain: %s\n\nProvenance: %s\n' "$RX_REPOSITORY" "$RX_REF" "$RX_REVISION" "$RX_VERSION" "$RX_RUST_TOOLCHAIN" "https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")")
+          gh workflow run check.yml --ref "$branch"
+          echo "Created $pr_url and dispatched Check." >> "$GITHUB_STEP_SUMMARY"

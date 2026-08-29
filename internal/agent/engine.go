@@ -18,13 +18,15 @@ import (
 const requestEnvironment = "RX_HOST_REQUEST"
 
 type embeddedEngine struct {
-	data       []byte
-	digest     string
-	version    string
-	targetOS   string
-	targetArch string
-	cacheRoot  func() (string, error)
-	lookupEnv  func(string) (string, bool)
+	data        []byte
+	digest      string
+	version     string
+	revision    string
+	targetOS    string
+	targetArch  string
+	metadataErr error
+	cacheRoot   func() (string, error)
+	lookupEnv   func(string) (string, bool)
 }
 
 type hostRequest struct {
@@ -52,14 +54,17 @@ type capabilities struct {
 }
 
 func newEmbeddedEngine() embeddedEngine {
+	version, revision, digest, metadataErr := loadEmbeddedRXMetadata(embeddedRXOS, embeddedRXArch)
 	return embeddedEngine{
-		data:       embeddedRX,
-		digest:     embeddedRXSHA256,
-		version:    embeddedRXVersion,
-		targetOS:   embeddedRXOS,
-		targetArch: embeddedRXArch,
-		cacheRoot:  cacheDirectory,
-		lookupEnv:  os.LookupEnv,
+		data:        embeddedRX,
+		digest:      digest,
+		version:     version,
+		revision:    revision,
+		targetOS:    embeddedRXOS,
+		targetArch:  embeddedRXArch,
+		metadataErr: metadataErr,
+		cacheRoot:   cacheDirectory,
+		lookupEnv:   os.LookupEnv,
 	}
 }
 
@@ -79,12 +84,19 @@ func (engine embeddedEngine) Resolve(ctx context.Context, harness string) (strin
 	if len(engine.data) == 0 {
 		return "", fmt.Errorf("embedded rx is unavailable for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
+	if engine.metadataErr != nil {
+		return "", fmt.Errorf("load embedded rx metadata: %w", engine.metadataErr)
+	}
 	if engine.targetOS != runtime.GOOS || engine.targetArch != runtime.GOARCH {
 		return "", fmt.Errorf("embedded rx targets %s/%s, not %s/%s", engine.targetOS, engine.targetArch, runtime.GOOS, runtime.GOARCH)
 	}
 	digest := sha256Hex(engine.data)
 	if digest != engine.digest {
-		return "", fmt.Errorf("embedded rx %s failed SHA-256 verification", engine.version)
+		return "", fmt.Errorf(
+			"embedded rx %s from %s failed SHA-256 verification",
+			engine.version,
+			engine.revision,
+		)
 	}
 	root, err := engine.cacheRoot()
 	if err != nil {
