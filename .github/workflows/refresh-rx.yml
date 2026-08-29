@@ -10,9 +10,7 @@ on:
         type: string
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 env:
   RX_REPOSITORY: samzong/Recall
@@ -120,6 +118,7 @@ jobs:
           repository: ${{ env.RX_REPOSITORY }}
           ref: ${{ needs.resolve.outputs.revision }}
           path: recall
+          persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
@@ -167,6 +166,10 @@ jobs:
       - resolve
       - build
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
