@@ -7,8 +7,6 @@ groups:
     short: Create and manage Tokener.ai API keys
   models:
     short: Browse models available through Tokener.ai
-  partners:
-    short: Operate organizations and credits with a Partner control token
   usage:
     short: Inspect spend and model usage
 
@@ -392,346 +390,76 @@ commands:
     match:
       method: POST
       path: /api/partner/v1/organizations
-    use: provision
-    aliases: [provision-partner-organization]
-    short: Provision a Partner organization
-    long: |
-      Creates or idempotently returns the organization identified by the
-      Partner-owned external reference. A newly created organization returns
-      its initial model API key once; an idempotent replay does not.
-    example: |
-      tokener partners provision \
-        --set-str externalRef=customer-123 \
-        --set-str displayName='Customer 123' \
-        -o json
+    ignore: true
 
   get-partner-organization:
     match:
       method: GET
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}
-    use: organization
-    aliases: [get-partner-organization]
-    short: Show a Partner organization
-    long: |
-      Shows the provisioning and readiness state of a Partner-managed
-      organization identified by its external reference.
-    example: |
-      tokener partners organization <external-ref> -o json
-    output:
-      default_columns: [externalRef, status]
-      column_labels:
-        externalRef: ORGANIZATION
-        status: STATUS
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   set-partner-organization-status:
     match:
       method: PATCH
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}
-    use: set-status
-    aliases: [set-partner-organization-status]
-    short: Suspend or resume a Partner organization
-    long: |
-      Requests the active or suspended workspace state. The returned readiness
-      remains preparing until model-call enforcement converges.
-    example: |
-      tokener partners set-status <external-ref> \
-        --set-str desiredStatus=suspended \
-        -o json
-      tokener partners set-status <external-ref> \
-        --set-str desiredStatus=active \
-        -o json
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   rotate-partner-organization-key:
     match:
       method: POST
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}/key
-    use: rotate-key
-    aliases: [rotate-partner-organization-key]
-    short: Rotate a Partner organization's API key
-    long: |
-      Replaces the organization's model API key. Reusing the same operation ID
-      returns the same replacement secret. Treat the response as a credential.
-    example: |
-      tokener partners rotate-key <external-ref> \
-        --set-str operationId=<uuid> \
-        -o json
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   revoke-partner-organization-key:
     match:
       method: DELETE
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}/key
-    use: revoke-key
-    aliases: [revoke-partner-organization-key]
-    short: Permanently revoke a Partner organization's API key
-    long: |
-      Suspends the workspace and permanently revokes its current model API key
-      while retaining billing and audit records.
-    example: |
-      tokener partners revoke-key <external-ref> -o json
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   get-partner-organization-models:
     match:
       method: GET
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}/models
-    use: models
-    aliases: [get-partner-organization-models]
-    short: List models callable by a Partner organization
-    long: |
-      Lists the models currently callable by the Partner-managed organization.
-      Only a usable workspace returns callable models.
-    example: |
-      tokener partners models <external-ref>
-      tokener partners models <external-ref> -o json
-    output:
-      default_columns: [id, label, provider, contextSize, pricing.inputPerMillion, pricing.outputPerMillion]
-      column_labels:
-        id: MODEL
-        label: NAME
-        provider: PROVIDER
-        contextSize: CONTEXT
-        pricing.inputPerMillion: "INPUT (USD / 1M)"
-        pricing.outputPerMillion: "OUTPUT (USD / 1M)"
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   get-partner-organization-balance:
     match:
       method: GET
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}/balance
-    use: balance
-    aliases: [get-partner-organization-balance]
-    short: Show a Partner organization's credit balance
-    long: |
-      Shows purchased, promotional, and active allowance credits for the
-      Partner-managed organization. Monetary values are returned in micro-USD.
-    example: |
-      tokener partners balance <external-ref>
-      tokener partners balance <external-ref> -o json
-    output:
-      default_columns: [externalRef, availableUsdMicro, purchasedAvailableUsdMicro, promotionalAvailableUsdMicro, allowance.availableUsdMicro, generatedAt]
-      column_labels:
-        externalRef: ORGANIZATION
-        availableUsdMicro: TOTAL
-        purchasedAvailableUsdMicro: PURCHASED
-        promotionalAvailableUsdMicro: PROMOTIONAL
-        allowance.availableUsdMicro: ALLOWANCE
-        generatedAt: GENERATED
-      column_formats:
-        availableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-        purchasedAvailableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-        promotionalAvailableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-        allowance.availableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
+    ignore: true
 
   get-partner-organization-usage:
     match:
       method: GET
       path: /api/partner/v1/organizations/by-external-ref/{externalRef}/usage
-    use: usage
-    aliases: [get-partner-organization-usage]
-    short: Show usage for a Partner organization
-    long: |
-      Shows model usage for an inclusive UTC date range of 1 to 366 days. The
-      end date cannot be in the future.
-    example: |
-      tokener partners usage <external-ref> \
-        --start-date 2026-08-01 \
-        --end-date 2026-08-28 \
-        -o json
-    output:
-      default_columns: [model, requests, inputTokens, outputTokens, cacheReadInputTokens, billedUsdMicro]
-      column_labels:
-        model: MODEL
-        requests: REQUESTS
-        inputTokens: INPUT
-        outputTokens: OUTPUT
-        cacheReadInputTokens: "CACHE READ"
-        billedUsdMicro: SPEND
-      column_formats:
-        billedUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      externalRef:
-        argument: external-ref
-        help: Partner-owned organization reference
-      startDate:
-        help: Inclusive UTC start date (YYYY-MM-DD)
-      endDate:
-        help: Inclusive UTC end date (YYYY-MM-DD)
+    ignore: true
 
   post-partner-credit-event:
     match:
       method: POST
       path: /api/partner/v1/credit-events
-    use: post-credit-event
-    aliases: [post-partner-credit-event]
-    short: Post a Partner credit event
-    long: |
-      Posts an idempotent purchase, grant, refund, or dispute event. Refund and
-      lost-dispute events must reference a purchase, and their combined amount
-      cannot exceed it. Monetary values use micro-USD.
-    example: |
-      tokener partners post-credit-event --file credit-event.json -o json
+    ignore: true
 
   get-partner-credit-event:
     match:
       method: GET
       path: /api/partner/v1/credit-events/{eventId}
-    use: credit-event
-    aliases: [get-partner-credit-event]
-    short: Show a Partner credit event
-    long: |
-      Shows an accepted credit event owned by the authenticated Partner and
-      organization reference.
-    example: |
-      tokener partners credit-event <event-id> \
-        --external-ref customer-123 \
-        -o json
-    output:
-      default_columns: [eventId, externalRef, type, amountUsdMicro, occurredAt, relatedEventId]
-      column_labels:
-        eventId: EVENT
-        externalRef: ORGANIZATION
-        type: TYPE
-        amountUsdMicro: AMOUNT
-        occurredAt: TIME
-        relatedEventId: RELATED
-      column_formats:
-        amountUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      eventId:
-        argument: event-id
-        help: Partner-owned credit event ID
-      externalRef:
-        help: Partner-owned organization reference
+    ignore: true
 
   create-partner-allowance-window:
     match:
       method: POST
       path: /api/partner/v1/allowance-windows
-    use: schedule-allowance
-    aliases: [create-partner-allowance-window]
-    short: Schedule a Partner allowance window
-    long: |
-      Schedules an idempotent recurring-credit window using half-open UTC day
-      boundaries. Windows cannot overlap or start before the current UTC day,
-      and accepted windows activate asynchronously. Monetary values use
-      micro-USD.
-    example: |
-      tokener partners schedule-allowance --file allowance.json -o json
+    ignore: true
 
   get-partner-allowance-window:
     match:
       method: GET
       path: /api/partner/v1/allowance-windows/{windowId}
-    use: allowance
-    aliases: [get-partner-allowance-window]
-    short: Show a Partner allowance window
-    long: |
-      Shows an accepted allowance window owned by the authenticated Partner and
-      organization reference.
-    example: |
-      tokener partners allowance <window-id> \
-        --external-ref customer-123 \
-        -o json
-    output:
-      default_columns: [windowId, externalRef, status, effectiveAmountUsdMicro, startsAt, endsAt]
-      column_labels:
-        windowId: WINDOW
-        externalRef: ORGANIZATION
-        status: STATUS
-        effectiveAmountUsdMicro: AMOUNT
-        startsAt: START
-        endsAt: END
-      column_formats:
-        effectiveAmountUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      windowId:
-        argument: window-id
-        help: Partner-owned allowance window ID
-      externalRef:
-        help: Partner-owned organization reference
+    ignore: true
 
   correct-partner-allowance-window:
     match:
       method: POST
       path: /api/partner/v1/allowance-windows/{windowId}/corrections
-    use: correct-allowance
-    aliases: [correct-partner-allowance-window]
-    short: Correct a Partner allowance window
-    long: |
-      Posts an immutable positive or negative allowance correction. Reducing a
-      future window to zero cancels it; correcting an active window updates its
-      balance and budget projections atomically. Monetary values use micro-USD.
-    example: |
-      tokener partners correct-allowance <window-id> \
-        --set-str correctionId=correction-123 \
-        --set-str externalRef=customer-123 \
-        --set-str deltaUsdMicro=-5000000 \
-        -o json
-    params:
-      windowId:
-        argument: window-id
-        help: Partner-owned allowance window ID
+    ignore: true
