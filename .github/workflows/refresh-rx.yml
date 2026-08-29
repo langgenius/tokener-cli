@@ -132,6 +132,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Build rx
+        shell: bash
         working-directory: recall
         env:
           TARGET: ${{ matrix.target }}
