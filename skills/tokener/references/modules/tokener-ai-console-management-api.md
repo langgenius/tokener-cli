@@ -121,8 +121,24 @@ tokener keys list -o json
 - Body: required; media type `application/json`
 - Flags:
   - argument 1 `[key-id]` or `--id` (path, required): API key ID
+  - `--allowed-models` (body): allowedModels
+  - `--budget-duration` (body, one of: daily|weekly|monthly): budgetDuration
+  - `--expires-at` (body, date-time): expiresAt
+  - `--max-budget-usd` (body): maxBudgetUsd
+  - `--max-parallel-requests` (body): maxParallelRequests
+  - `--rpm-limit` (body): rpmLimit
+  - `--tpm-limit` (body): tpmLimit
 - Output: response media `application/json`
-- Example: `tokener keys replace-limits <key-id> --file limits.json -o json`
+- Example:
+
+```
+tokener keys replace-limits <key-id> --file limits.json -o json
+tokener keys replace-limits <key-id> \
+  --max-budget-usd 100 \
+  --budget-duration monthly \
+  --rpm-limit 60 \
+  -o json
+```
 
 ### `tokener keys reveal`
 
@@ -154,12 +170,13 @@ tokener keys list -o json
 - Body: required; media type `application/json`
 - Flags:
   - argument 1 `[key-id]` or `--id` (path, required): API key ID
+  - `--status` (body, required, one of: active|disabled): status
 - Output: response media `application/json`
 - Example:
 
 ```
-tokener keys set-status <key-id> --set-str status=disabled -o json
-tokener keys set-status <key-id> --set-str status=active -o json
+tokener keys set-status <key-id> --status disabled -o json
+tokener keys set-status <key-id> --status active -o json
 ```
 
 ## models
