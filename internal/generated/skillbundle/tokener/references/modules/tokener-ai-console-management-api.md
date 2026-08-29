@@ -13,287 +13,423 @@
 
 ### `tokener billing balance`
 
-- Summary: Get the organization's available credit balance
+- Summary: Show the available Tokener.ai credit balance
 - HTTP: `GET /api/v1/billing/balance`
 - Auth: required
 - Body: none
 - Flags: none
 - Output: response media `application/json`
+- Example:
+
+```
+tokener billing balance
+tokener billing balance -o json
+```
 
 ### `tokener billing ledger`
 
-- Summary: List append-only ledger entries (paginated)
+- Summary: List credit ledger activity
 - HTTP: `GET /api/v1/billing/ledger`
 - Auth: required
 - Body: none
 - Flags:
-  - `--cursor` (query): cursor
-  - `--limit` (query): limit
+  - `--cursor` (query): Opaque cursor returned by the previous page
+  - `--limit` (query): Number of ledger entries per page
 - Output: list path `items`; columns `type`, `id`, `amountUsdMicro`, `description`, `occurredAt`, `sourceType`; response media `application/json`; pagination `cursor`
+- Example:
+
+```
+tokener billing ledger --limit 25
+tokener billing ledger --all -o json
+```
 
 ### `tokener billing purchases`
 
-- Summary: List credit purchases (paginated)
+- Summary: List credit purchases
 - HTTP: `GET /api/v1/billing/purchases`
 - Auth: required
 - Body: none
 - Flags:
-  - `--cursor` (query): cursor
-  - `--limit` (query): limit
+  - `--cursor` (query): Opaque cursor returned by the previous page
+  - `--limit` (query): Number of purchases per page
 - Output: list path `items`; columns `id`, `amountCents`, `createdAt`, `creditAmountUsdMicro`, `currency`, `invoiceUrl`; response media `application/json`; pagination `cursor`
+- Example:
+
+```
+tokener billing purchases --limit 25
+tokener billing purchases --all -o json
+```
 
 ## identity
 
 ### `tokener identity whoami`
 
-- Summary: Resolve the caller identity for the presented management token
+- Summary: Show the authenticated user and organization
 - HTTP: `GET /api/v1/whoami`
 - Auth: required
 - Body: none
 - Flags: none
 - Output: response media `application/json`
+- Example:
+
+```
+tokener identity whoami
+tokener identity whoami -o json
+```
 
 ## keys
 
 ### `tokener keys create`
 
-- Summary: Create a Tokener.ai API key
+- Summary: Create an API key
 - HTTP: `POST /api/v1/keys`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
 - Output: response media `application/json`
+- Example:
+
+```
+tokener keys create --set-str name=production -o json
+tokener keys create \
+  --set-str name=production \
+  --set limits.maxBudgetUsd=100 \
+  --set-str limits.budgetDuration=monthly \
+  -o json
+```
 
 ### `tokener keys list`
 
-- Summary: List Tokener.ai API keys with 30-day spend
+- Summary: List API keys and 30-day spend
 - HTTP: `GET /api/v1/keys`
 - Auth: required
 - Body: none
 - Flags: none
 - Output: list path `keys`; columns `name`, `id`, `createdAt`, `lastUsedAt`, `prefix`, `spend30d`; response media `application/json`
+- Example:
 
-### `tokener keys reveal`
+```
+tokener keys list
+tokener keys list -o json
+```
 
-- Summary: Reveal an existing non-revoked key
-- HTTP: `POST /api/v1/keys/{id}/reveal`
-- Auth: required
-- Body: none
-- Flags:
-  - `--id` (path, required): id
-- Output: response media `application/json`
+### `tokener keys replace-limits`
 
-### `tokener keys revoke`
-
-- Summary: Revoke a key permanently
-- HTTP: `POST /api/v1/keys/{id}/revoke`
-- Auth: required
-- Body: none
-- Flags:
-  - `--id` (path, required): id
-- Output: response media `application/json`
-
-### `tokener keys set-status`
-
-- Summary: Enable or disable a key
-- HTTP: `POST /api/v1/keys/{id}/status`
-- Auth: required
-- Body: required; media type `application/json`
-- Flags:
-  - `--id` (path, required): id
-- Output: response media `application/json`
-
-### `tokener keys update-limits`
-
-- Summary: Replace budget, rate, model, and expiry limits for a key (full replacement; omitted/null fields are cleared)
+- Summary: Replace all limits for an API key
 - HTTP: `PATCH /api/v1/keys/{id}/limits`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags:
-  - `--id` (path, required): id
+  - argument 1 `[key-id]` or `--id` (path, required): API key ID
 - Output: response media `application/json`
+- Example: `tokener keys replace-limits <key-id> --file limits.json -o json`
+
+### `tokener keys reveal`
+
+- Summary: Reveal an API key secret
+- HTTP: `POST /api/v1/keys/{id}/reveal`
+- Auth: required
+- Body: none
+- Flags:
+  - argument 1 `[key-id]` or `--id` (path, required): API key ID
+- Output: response media `application/json`
+- Example: `tokener keys reveal <key-id> -o json`
+
+### `tokener keys revoke`
+
+- Summary: Permanently revoke an API key
+- HTTP: `POST /api/v1/keys/{id}/revoke`
+- Auth: required
+- Body: none
+- Flags:
+  - argument 1 `[key-id]` or `--id` (path, required): API key ID
+- Output: response media `application/json`
+- Example: `tokener keys revoke <key-id> -o json`
+
+### `tokener keys set-status`
+
+- Summary: Enable or disable an API key
+- HTTP: `POST /api/v1/keys/{id}/status`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags:
+  - argument 1 `[key-id]` or `--id` (path, required): API key ID
+- Output: response media `application/json`
+- Example:
+
+```
+tokener keys set-status <key-id> --set-str status=disabled -o json
+tokener keys set-status <key-id> --set-str status=active -o json
+```
 
 ## models
 
-### `tokener models catalog`
+### `tokener models list`
 
-- Summary: List the public managed model catalog
+- Summary: List models available to the organization
 - HTTP: `GET /api/v1/models`
 - Auth: required
 - Body: none
 - Flags: none
 - Output: list path `models`; columns `name`, `id`, `cachePer1m`, `category`, `context`, `inputPer1m`; response media `application/json`
+- Example:
 
-### `tokener models public-model-catalog`
-
-- Summary: Get the anonymous versioned machine model catalog
-- HTTP: `GET /api/public/v1/models`
-- Auth: public
-- Body: none
-- Flags: none
-- Output: list path `models`; response media `application/json`
+```
+tokener models list
+tokener models list -o json
+```
 
 ## partners
 
-### `tokener partners correct-partner-allowance-window`
+### `tokener partners allowance`
+
+- Summary: Show a Partner allowance window
+- HTTP: `GET /api/partner/v1/allowance-windows/{windowId}`
+- Auth: required
+- Body: none
+- Flags:
+  - argument 1 `[window-id]` or `--window-id` (path, required): Partner-owned allowance window ID
+  - `--external-ref` (query, required): Partner-owned organization reference
+- Output: response media `application/json`
+- Example:
+
+```
+tokener partners allowance <window-id> \
+  --external-ref customer-123 \
+  -o json
+```
+
+### `tokener partners balance`
+
+- Summary: Show a Partner organization's credit balance
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/balance`
+- Auth: required
+- Body: none
+- Flags:
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
+- Output: response media `application/json`
+- Example:
+
+```
+tokener partners balance <external-ref>
+tokener partners balance <external-ref> -o json
+```
+
+### `tokener partners correct-allowance`
 
 - Summary: Correct a Partner allowance window
 - HTTP: `POST /api/partner/v1/allowance-windows/{windowId}/corrections`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags:
-  - `--window-id` (path, required): windowId
+  - argument 1 `[window-id]` or `--window-id` (path, required): Partner-owned allowance window ID
 - Output: response media `application/json`
+- Example:
 
-### `tokener partners create-partner-allowance-window`
+```
+tokener partners correct-allowance <window-id> \
+  --set-str correctionId=correction-123 \
+  --set-str externalRef=customer-123 \
+  --set-str deltaUsdMicro=-5000000 \
+  -o json
+```
 
-- Summary: Schedule an idempotent Partner allowance window
-- HTTP: `POST /api/partner/v1/allowance-windows`
-- Auth: required
-- Body: required; media type `application/json`
-- Flags: none
-- Output: response media `application/json`
+### `tokener partners credit-event`
 
-### `tokener partners get-partner-allowance-window`
-
-- Summary: Read an accepted Partner allowance window
-- HTTP: `GET /api/partner/v1/allowance-windows/{windowId}`
-- Auth: required
-- Body: none
-- Flags:
-  - `--window-id` (path, required): windowId
-  - `--external-ref` (query, required): externalRef
-- Output: response media `application/json`
-
-### `tokener partners get-partner-credit-event`
-
-- Summary: Read a posted Partner credit event
+- Summary: Show a Partner credit event
 - HTTP: `GET /api/partner/v1/credit-events/{eventId}`
 - Auth: required
 - Body: none
 - Flags:
-  - `--event-id` (path, required): eventId
-  - `--external-ref` (query, required): externalRef
+  - argument 1 `[event-id]` or `--event-id` (path, required): Partner-owned credit event ID
+  - `--external-ref` (query, required): Partner-owned organization reference
 - Output: response media `application/json`
+- Example:
 
-### `tokener partners get-partner-organization`
+```
+tokener partners credit-event <event-id> \
+  --external-ref customer-123 \
+  -o json
+```
 
-- Summary: Read Partner organization provisioning status
-- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}`
-- Auth: required
-- Body: none
-- Flags:
-  - `--external-ref` (path, required): externalRef
-- Output: response media `application/json`
-
-### `tokener partners get-partner-organization-balance`
-
-- Summary: Read a Partner organization's credit balances
-- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/balance`
-- Auth: required
-- Body: none
-- Flags:
-  - `--external-ref` (path, required): externalRef
-- Output: response media `application/json`
-
-### `tokener partners get-partner-organization-models`
+### `tokener partners models`
 
 - Summary: List models callable by a Partner organization
 - HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/models`
 - Auth: required
 - Body: none
 - Flags:
-  - `--external-ref` (path, required): externalRef
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
 - Output: list path `models`; response media `application/json`
+- Example:
 
-### `tokener partners get-partner-organization-usage`
+```
+tokener partners models <external-ref>
+tokener partners models <external-ref> -o json
+```
 
-- Summary: Read model usage for a Partner organization
-- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/usage`
+### `tokener partners organization`
+
+- Summary: Show a Partner organization
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}`
 - Auth: required
 - Body: none
 - Flags:
-  - `--external-ref` (path, required): externalRef
-  - `--start-date` (query, required, date): First UTC date in the usage range.
-  - `--end-date` (query, required, date): Last UTC date; cannot be in the future.
-- Output: list path `models`; response media `application/json`
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
+- Output: response media `application/json`
+- Example: `tokener partners organization <external-ref> -o json`
 
-### `tokener partners post-partner-credit-event`
+### `tokener partners post-credit-event`
 
-- Summary: Post an idempotent Partner credit event
+- Summary: Post a Partner credit event
 - HTTP: `POST /api/partner/v1/credit-events`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
 - Output: response media `application/json`
+- Example: `tokener partners post-credit-event --file credit-event.json -o json`
 
-### `tokener partners provision-partner-organization`
+### `tokener partners provision`
 
-- Summary: Provision a Partner organization and its initial API key
+- Summary: Provision a Partner organization
 - HTTP: `POST /api/partner/v1/organizations`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
 - Output: response media `application/json`
+- Example:
 
-### `tokener partners revoke-partner-organization-key`
+```
+tokener partners provision \
+  --set-str externalRef=customer-123 \
+  --set-str displayName='Customer 123' \
+  -o json
+```
 
-- Summary: Revoke a Partner organization's model API key
+### `tokener partners revoke-key`
+
+- Summary: Permanently revoke a Partner organization's API key
 - HTTP: `DELETE /api/partner/v1/organizations/by-external-ref/{externalRef}/key`
 - Auth: required
 - Body: none
 - Flags:
-  - `--external-ref` (path, required): externalRef
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
 - Output: response media `application/json`
+- Example: `tokener partners revoke-key <external-ref> -o json`
 
-### `tokener partners rotate-partner-organization-key`
+### `tokener partners rotate-key`
 
-- Summary: Rotate a Partner organization's model API key
+- Summary: Rotate a Partner organization's API key
 - HTTP: `POST /api/partner/v1/organizations/by-external-ref/{externalRef}/key`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags:
-  - `--external-ref` (path, required): externalRef
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
 - Output: response media `application/json`
+- Example:
 
-### `tokener partners set-partner-organization-status`
+```
+tokener partners rotate-key <external-ref> \
+  --set-str operationId=<uuid> \
+  -o json
+```
+
+### `tokener partners schedule-allowance`
+
+- Summary: Schedule a Partner allowance window
+- HTTP: `POST /api/partner/v1/allowance-windows`
+- Auth: required
+- Body: required; media type `application/json`
+- Flags: none
+- Output: response media `application/json`
+- Example: `tokener partners schedule-allowance --file allowance.json -o json`
+
+### `tokener partners set-status`
 
 - Summary: Suspend or resume a Partner organization
 - HTTP: `PATCH /api/partner/v1/organizations/by-external-ref/{externalRef}`
 - Auth: required
 - Body: required; media type `application/json`
 - Flags:
-  - `--external-ref` (path, required): externalRef
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
 - Output: response media `application/json`
+- Example:
+
+```
+tokener partners set-status <external-ref> \
+  --set-str desiredStatus=suspended \
+  -o json
+tokener partners set-status <external-ref> \
+  --set-str desiredStatus=active \
+  -o json
+```
+
+### `tokener partners usage`
+
+- Summary: Show usage for a Partner organization
+- HTTP: `GET /api/partner/v1/organizations/by-external-ref/{externalRef}/usage`
+- Auth: required
+- Body: none
+- Flags:
+  - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
+  - `--start-date` (query, required, date): Inclusive UTC start date
+  - `--end-date` (query, required, date): Inclusive UTC end date
+- Output: list path `models`; response media `application/json`
+- Example:
+
+```
+tokener partners usage <external-ref> \
+  --start-date 2026-08-01 \
+  --end-date 2026-08-28 \
+  -o json
+```
 
 ## usage
 
-### `tokener usage breakdown`
+### `tokener usage by-model`
 
-- Summary: Get usage aggregated by model
+- Summary: Show usage grouped by model
 - HTTP: `GET /api/v1/usage/breakdown`
 - Auth: required
 - Body: none
 - Flags:
-  - `--range` (query, default `7`, one of: 7|30): range
+  - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: list path `rows`; columns `cacheReadInputTokens`, `inputTokens`, `key`, `outputTokens`, `requests`, `spendUsdMicro`; response media `application/json`
+- Example:
 
-### `tokener usage series`
+```
+tokener usage by-model
+tokener usage by-model --range 30 -o json
+```
 
-- Summary: Get per-day usage points with per-model segments
+### `tokener usage daily`
+
+- Summary: Show daily usage
 - HTTP: `GET /api/v1/usage/series`
 - Auth: required
 - Body: none
 - Flags:
-  - `--range` (query, default `7`, one of: 7|30): range
+  - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: list path `points`; columns `day`, `requests`, `spendUsdMicro`, `tokens`; response media `application/json`
+- Example:
+
+```
+tokener usage daily
+tokener usage daily --range 30 -o json
+```
 
 ### `tokener usage summary`
 
-- Summary: Get usage totals for a time range
+- Summary: Show usage totals
 - HTTP: `GET /api/v1/usage/summary`
 - Auth: required
 - Body: none
 - Flags:
-  - `--range` (query, default `7`, one of: 7|30): range
+  - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: response media `application/json`
+- Example:
+
+```
+tokener usage summary
+tokener usage summary --range 30 -o json
+```
