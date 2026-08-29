@@ -36,7 +36,8 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/billing/balance",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:          runtime.OutputHints{DefaultColumns: []string{"availableUsdMicro", "purchasedAvailableUsdMicro", "grantedAvailableUsdMicro", "status", "updatedAt"}, ColumnLabels: map[string]string{"availableUsdMicro": "TOTAL (MICRO-USD)", "grantedAvailableUsdMicro": "GRANTED (MICRO-USD)", "purchasedAvailableUsdMicro": "PURCHASED (MICRO-USD)", "status": "STATUS", "updatedAt": "UPDATED"}, ResponseMediaType: "application/json"},
+		Security:        &runtime.SecurityHint{},
 	},
 	{
 		Group:           "billing",
@@ -53,7 +54,8 @@ var Specs = []runtime.CommandSpec{
 			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "Opaque cursor returned by the previous page", Required: false},
 			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "Number of ledger entries per page (1-100)", Required: false},
 		},
-		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"type", "id", "amountUsdMicro", "description", "occurredAt", "sourceType"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
+		Output:   runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"occurredAt", "amountUsdMicro", "type", "sourceType", "description", "id"}, ColumnLabels: map[string]string{"amountUsdMicro": "AMOUNT (MICRO-USD)", "description": "DESCRIPTION", "id": "ID", "occurredAt": "TIME", "sourceType": "SOURCE", "type": "TYPE"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "billing",
@@ -70,7 +72,8 @@ var Specs = []runtime.CommandSpec{
 			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "Opaque cursor returned by the previous page", Required: false},
 			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "Number of purchases per page (1-100)", Required: false},
 		},
-		Output: runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"id", "amountCents", "createdAt", "creditAmountUsdMicro", "currency", "invoiceUrl"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
+		Output:   runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"createdAt", "status", "amountCents", "creditAmountUsdMicro", "currency", "id"}, ColumnLabels: map[string]string{"amountCents": "PAID (CENTS)", "createdAt": "TIME", "creditAmountUsdMicro": "CREDIT (MICRO-USD)", "currency": "CURRENCY", "id": "ID", "status": "STATUS"}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "identity",
@@ -83,7 +86,8 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/whoami",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:          runtime.OutputHints{DefaultColumns: []string{"email", "emailVerified", "tokenName", "organizationId", "userId"}, ColumnLabels: map[string]string{"email": "EMAIL", "emailVerified": "VERIFIED", "organizationId": "ORGANIZATION", "tokenName": "TOKEN", "userId": "USER"}, ResponseMediaType: "application/json"},
+		Security:        &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -101,7 +105,8 @@ var Specs = []runtime.CommandSpec{
 			MediaType: "application/json",
 			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -114,7 +119,8 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/keys",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "keys", DefaultColumns: []string{"name", "id", "createdAt", "lastUsedAt", "prefix", "spend30d"}, ResponseMediaType: "application/json"},
+		Output:          runtime.OutputHints{ListPath: "keys", DefaultColumns: []string{"name", "status", "prefix", "spend30d", "lastUsedAt", "id"}, ColumnLabels: map[string]string{"id": "ID", "lastUsedAt": "LAST USED", "name": "NAME", "prefix": "PREFIX", "spend30d": "SPEND 30D (MICRO-USD)", "status": "STATUS"}, ResponseMediaType: "application/json"},
+		Security:        &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -130,7 +136,8 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -146,7 +153,8 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -167,7 +175,8 @@ var Specs = []runtime.CommandSpec{
 			MediaType: "application/json",
 			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"status": &runtime.SchemaSpec{Type: "string"}}, Required: []string{"status"}},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "keys",
@@ -189,7 +198,8 @@ var Specs = []runtime.CommandSpec{
 			MediaType: "application/json",
 			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "models",
@@ -203,7 +213,8 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/models",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"name", "id", "cachePer1m", "category", "context", "inputPer1m"}, ResponseMediaType: "application/json"},
+		Output:          runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"id", "name", "provider", "context", "inputPer1m", "outputPer1m"}, ColumnLabels: map[string]string{"context": "CONTEXT", "id": "MODEL", "inputPer1m": "INPUT / 1M", "name": "NAME", "outputPer1m": "OUTPUT / 1M", "provider": "PROVIDER"}, ResponseMediaType: "application/json"},
+		Security:        &runtime.SecurityHint{},
 	},
 	{
 		Group:           "models",
@@ -279,7 +290,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "windowId", Flag: "window-id", Argument: "window-id", In: "path", GoType: "string", Help: "Partner-owned allowance window ID", Required: true},
 			{Name: "externalRef", Flag: "external-ref", In: "query", GoType: "string", Help: "Partner-owned organization reference", Required: true},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"windowId", "externalRef", "status", "effectiveAmountUsdMicro", "startsAt", "endsAt"}, ColumnLabels: map[string]string{"effectiveAmountUsdMicro": "AMOUNT (MICRO-USD)", "endsAt": "END", "externalRef": "ORGANIZATION", "startsAt": "START", "status": "STATUS", "windowId": "WINDOW"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -298,7 +309,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "eventId", Flag: "event-id", Argument: "event-id", In: "path", GoType: "string", Help: "Partner-owned credit event ID", Required: true},
 			{Name: "externalRef", Flag: "external-ref", In: "query", GoType: "string", Help: "Partner-owned organization reference", Required: true},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"eventId", "externalRef", "type", "amountUsdMicro", "occurredAt", "relatedEventId"}, ColumnLabels: map[string]string{"amountUsdMicro": "AMOUNT (MICRO-USD)", "eventId": "EVENT", "externalRef": "ORGANIZATION", "occurredAt": "TIME", "relatedEventId": "RELATED", "type": "TYPE"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -316,7 +327,7 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "externalRef", Flag: "external-ref", Argument: "external-ref", In: "path", GoType: "string", Help: "Partner-owned organization reference", Required: true},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"externalRef", "status"}, ColumnLabels: map[string]string{"externalRef": "ORGANIZATION", "status": "STATUS"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -334,7 +345,7 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "externalRef", Flag: "external-ref", Argument: "external-ref", In: "path", GoType: "string", Help: "Partner-owned organization reference", Required: true},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"externalRef", "availableUsdMicro", "purchasedAvailableUsdMicro", "promotionalAvailableUsdMicro", "allowance.availableUsdMicro", "generatedAt"}, ColumnLabels: map[string]string{"allowance.availableUsdMicro": "ALLOWANCE (MICRO-USD)", "availableUsdMicro": "TOTAL (MICRO-USD)", "externalRef": "ORGANIZATION", "generatedAt": "GENERATED", "promotionalAvailableUsdMicro": "PROMOTIONAL (MICRO-USD)", "purchasedAvailableUsdMicro": "PURCHASED (MICRO-USD)"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -352,7 +363,7 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "externalRef", Flag: "external-ref", Argument: "external-ref", In: "path", GoType: "string", Help: "Partner-owned organization reference", Required: true},
 		},
-		Output:   runtime.OutputHints{ListPath: "models", ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"id", "label", "provider", "contextSize", "pricing.inputPerMillion", "pricing.outputPerMillion"}, ColumnLabels: map[string]string{"contextSize": "CONTEXT", "id": "MODEL", "label": "NAME", "pricing.inputPerMillion": "INPUT (USD / 1M)", "pricing.outputPerMillion": "OUTPUT (USD / 1M)", "provider": "PROVIDER"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -372,7 +383,7 @@ var Specs = []runtime.CommandSpec{
 			{Name: "startDate", Flag: "start-date", In: "query", GoType: "string", Help: "Inclusive UTC start date (YYYY-MM-DD)", Required: true, Format: "date"},
 			{Name: "endDate", Flag: "end-date", In: "query", GoType: "string", Help: "Inclusive UTC end date (YYYY-MM-DD)", Required: true, Format: "date"},
 		},
-		Output:   runtime.OutputHints{ListPath: "models", ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"model", "requests", "inputTokens", "outputTokens", "cacheReadInputTokens", "billedUsdMicro"}, ColumnLabels: map[string]string{"billedUsdMicro": "SPEND (MICRO-USD)", "cacheReadInputTokens": "CACHE READ", "inputTokens": "INPUT", "model": "MODEL", "outputTokens": "OUTPUT", "requests": "REQUESTS"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{
@@ -494,7 +505,8 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
 		},
-		Output: runtime.OutputHints{ListPath: "rows", DefaultColumns: []string{"cacheReadInputTokens", "inputTokens", "key", "outputTokens", "requests", "spendUsdMicro"}, ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ListPath: "rows", DefaultColumns: []string{"key", "requests", "inputTokens", "outputTokens", "cacheReadInputTokens", "spendUsdMicro"}, ColumnLabels: map[string]string{"cacheReadInputTokens": "CACHE READ", "inputTokens": "INPUT", "key": "MODEL", "outputTokens": "OUTPUT", "requests": "REQUESTS", "spendUsdMicro": "SPEND (MICRO-USD)"}, ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "usage",
@@ -511,7 +523,8 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
 		},
-		Output: runtime.OutputHints{ListPath: "points", DefaultColumns: []string{"day", "requests", "spendUsdMicro", "tokens"}, ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{ListPath: "points", DefaultColumns: []string{"day", "requests", "tokens", "spendUsdMicro"}, ColumnLabels: map[string]string{"day": "DAY", "requests": "REQUESTS", "spendUsdMicro": "SPEND (MICRO-USD)", "tokens": "TOKENS"}, ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 	{
 		Group:           "usage",
@@ -527,6 +540,7 @@ var Specs = []runtime.CommandSpec{
 		Params: []runtime.ParamSpec{
 			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
 		},
-		Output: runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"summary.requests", "summary.tokens", "summary.spendUsdMicro", "summary.inputTokens", "summary.outputTokens", "summary.cacheReadInputTokens"}, ColumnLabels: map[string]string{"summary.cacheReadInputTokens": "CACHE READ", "summary.inputTokens": "INPUT", "summary.outputTokens": "OUTPUT", "summary.requests": "REQUESTS", "summary.spendUsdMicro": "SPEND (MICRO-USD)", "summary.tokens": "TOKENS"}, ResponseMediaType: "application/json"},
+		Security: &runtime.SecurityHint{},
 	},
 }

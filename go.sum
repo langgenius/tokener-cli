@@ -15,8 +15,8 @@ github.com/lathe-cli/kitup/go v0.1.3 h1:7eEW8mDr5MbXFaTwr2dlnH8ebg+3Kmhj2/j4d9Yf
 github.com/lathe-cli/kitup/go v0.1.3/go.mod h1:dZgJDmFRKjaFBZyaP1qlzOB9IEafnf1/ai4KX4hMA4c=
 github.com/lathe-cli/kitup/go-cobra v0.1.3 h1:fegvhNatfbknLbmAHeaeuwf51NgIaZMUxt4Fe6Pl8mY=
 github.com/lathe-cli/kitup/go-cobra v0.1.3/go.mod h1:ZPqC60WGcolY1frjTUcycKr6UjADaqrC19KFxM0RoDY=
-github.com/lathe-cli/lathe v0.6.0 h1:x0NiyIKSUzCfiITndJH2oXD4S8HHWMhBuquzh6hzUHU=
-github.com/lathe-cli/lathe v0.6.0/go.mod h1:/b5JLEkz9hQqKDXEnNsY/U4IGDJqxRlVD7Tw7iIyOSA=
+github.com/lathe-cli/lathe v0.6.1-0.20260829054822-8ab1b86c4bfc h1:s5Yh7+J9iBiZy1uHrWcZZdVf+uCw6+nOMqED30Tb180=
+github.com/lathe-cli/lathe v0.6.1-0.20260829054822-8ab1b86c4bfc/go.mod h1:QnK+jsjq1OLeNSV3/yJNz2GLNAmfrQM7RXlwELzCtio=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.16.0 h1:O9DK+vNMDVGLr2BeZqmpLeMjiMNkuXfcqntWbZV6S5g=
@@ -26,8 +26,9 @@ github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 h1:1EYB5IzjZawrrnELUi78f9fPu57Hu
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.3/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=
 github.com/spf13/cobra v1.10.2/go.mod h1:7C1pvHqHw5A4vrJfjNwvOdzYu0Gml16OCs2GRiTUUS4=
-github.com/spf13/pflag v1.0.9 h1:9exaQaMOCwffKiiiYk6/BndUBv+iRViNW+4lEMi0PvY=
 github.com/spf13/pflag v1.0.9/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
+github.com/spf13/pflag v1.0.10 h1:4EBh2KAYBwaONj6b2Ye1GiHfwjqyROoF4RwYO+vPwFk=
+github.com/spf13/pflag v1.0.10/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=

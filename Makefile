@@ -1,4 +1,4 @@
-LATHE_VERSION ?= v0.6.0
+LATHE_VERSION ?= v0.6.1-0.20260829054822-8ab1b86c4bfc
 INSTALL_DIR ?= $(HOME)/.local/bin
 
 .PHONY: cli-sync cli-build cli-install test check ci-check release-snapshot

@@ -18,7 +18,7 @@
 - Auth: required
 - Body: none
 - Flags: none
-- Output: response media `application/json`
+- Output: columns `availableUsdMicro`, `purchasedAvailableUsdMicro`, `grantedAvailableUsdMicro`, `status`, `updatedAt`; response media `application/json`
 - Example:
 
 ```
@@ -35,7 +35,7 @@ tokener billing balance -o json
 - Flags:
   - `--cursor` (query): Opaque cursor returned by the previous page
   - `--limit` (query): Number of ledger entries per page
-- Output: list path `items`; columns `type`, `id`, `amountUsdMicro`, `description`, `occurredAt`, `sourceType`; response media `application/json`; pagination `cursor`
+- Output: list path `items`; columns `occurredAt`, `amountUsdMicro`, `type`, `sourceType`, `description`, `id`; response media `application/json`; pagination `cursor`
 - Example:
 
 ```
@@ -52,7 +52,7 @@ tokener billing ledger --all -o json
 - Flags:
   - `--cursor` (query): Opaque cursor returned by the previous page
   - `--limit` (query): Number of purchases per page
-- Output: list path `items`; columns `id`, `amountCents`, `createdAt`, `creditAmountUsdMicro`, `currency`, `invoiceUrl`; response media `application/json`; pagination `cursor`
+- Output: list path `items`; columns `createdAt`, `status`, `amountCents`, `creditAmountUsdMicro`, `currency`, `id`; response media `application/json`; pagination `cursor`
 - Example:
 
 ```
@@ -69,7 +69,7 @@ tokener billing purchases --all -o json
 - Auth: required
 - Body: none
 - Flags: none
-- Output: response media `application/json`
+- Output: columns `email`, `emailVerified`, `tokenName`, `organizationId`, `userId`; response media `application/json`
 - Example:
 
 ```
@@ -105,7 +105,7 @@ tokener keys create \
 - Auth: required
 - Body: none
 - Flags: none
-- Output: list path `keys`; columns `name`, `id`, `createdAt`, `lastUsedAt`, `prefix`, `spend30d`; response media `application/json`
+- Output: list path `keys`; columns `name`, `status`, `prefix`, `spend30d`, `lastUsedAt`, `id`; response media `application/json`
 - Example:
 
 ```
@@ -171,7 +171,7 @@ tokener keys set-status <key-id> --set-str status=active -o json
 - Auth: required
 - Body: none
 - Flags: none
-- Output: list path `models`; columns `name`, `id`, `cachePer1m`, `category`, `context`, `inputPer1m`; response media `application/json`
+- Output: list path `models`; columns `id`, `name`, `provider`, `context`, `inputPer1m`, `outputPer1m`; response media `application/json`
 - Example:
 
 ```
@@ -190,7 +190,7 @@ tokener models list -o json
 - Flags:
   - argument 1 `[window-id]` or `--window-id` (path, required): Partner-owned allowance window ID
   - `--external-ref` (query, required): Partner-owned organization reference
-- Output: response media `application/json`
+- Output: columns `windowId`, `externalRef`, `status`, `effectiveAmountUsdMicro`, `startsAt`, `endsAt`; response media `application/json`
 - Example:
 
 ```
@@ -207,7 +207,7 @@ tokener partners allowance <window-id> \
 - Body: none
 - Flags:
   - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
-- Output: response media `application/json`
+- Output: columns `externalRef`, `availableUsdMicro`, `purchasedAvailableUsdMicro`, `promotionalAvailableUsdMicro`, `allowance.availableUsdMicro`, `generatedAt`; response media `application/json`
 - Example:
 
 ```
@@ -243,7 +243,7 @@ tokener partners correct-allowance <window-id> \
 - Flags:
   - argument 1 `[event-id]` or `--event-id` (path, required): Partner-owned credit event ID
   - `--external-ref` (query, required): Partner-owned organization reference
-- Output: response media `application/json`
+- Output: columns `eventId`, `externalRef`, `type`, `amountUsdMicro`, `occurredAt`, `relatedEventId`; response media `application/json`
 - Example:
 
 ```
@@ -260,7 +260,7 @@ tokener partners credit-event <event-id> \
 - Body: none
 - Flags:
   - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
-- Output: list path `models`; response media `application/json`
+- Output: list path `models`; columns `id`, `label`, `provider`, `contextSize`, `pricing.inputPerMillion`, `pricing.outputPerMillion`; response media `application/json`
 - Example:
 
 ```
@@ -276,7 +276,7 @@ tokener partners models <external-ref> -o json
 - Body: none
 - Flags:
   - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
-- Output: response media `application/json`
+- Output: columns `externalRef`, `status`; response media `application/json`
 - Example: `tokener partners organization <external-ref> -o json`
 
 ### `tokener partners post-credit-event`
@@ -374,7 +374,7 @@ tokener partners set-status <external-ref> \
   - argument 1 `[external-ref]` or `--external-ref` (path, required): Partner-owned organization reference
   - `--start-date` (query, required, date): Inclusive UTC start date
   - `--end-date` (query, required, date): Inclusive UTC end date
-- Output: list path `models`; response media `application/json`
+- Output: list path `models`; columns `model`, `requests`, `inputTokens`, `outputTokens`, `cacheReadInputTokens`, `billedUsdMicro`; response media `application/json`
 - Example:
 
 ```
@@ -394,7 +394,7 @@ tokener partners usage <external-ref> \
 - Body: none
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
-- Output: list path `rows`; columns `cacheReadInputTokens`, `inputTokens`, `key`, `outputTokens`, `requests`, `spendUsdMicro`; response media `application/json`
+- Output: list path `rows`; columns `key`, `requests`, `inputTokens`, `outputTokens`, `cacheReadInputTokens`, `spendUsdMicro`; response media `application/json`
 - Example:
 
 ```
@@ -410,7 +410,7 @@ tokener usage by-model --range 30 -o json
 - Body: none
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
-- Output: list path `points`; columns `day`, `requests`, `spendUsdMicro`, `tokens`; response media `application/json`
+- Output: list path `points`; columns `day`, `requests`, `tokens`, `spendUsdMicro`; response media `application/json`
 - Example:
 
 ```
@@ -426,7 +426,7 @@ tokener usage daily --range 30 -o json
 - Body: none
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
-- Output: response media `application/json`
+- Output: columns `summary.requests`, `summary.tokens`, `summary.spendUsdMicro`, `summary.inputTokens`, `summary.outputTokens`, `summary.cacheReadInputTokens`; response media `application/json`
 - Example:
 
 ```
