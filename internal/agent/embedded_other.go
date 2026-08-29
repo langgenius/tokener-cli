@@ -5,8 +5,6 @@ package agent
 var embeddedRX []byte
 
 const (
-	embeddedRXVersion = ""
-	embeddedRXSHA256  = ""
-	embeddedRXOS      = ""
-	embeddedRXArch    = ""
+	embeddedRXOS   = ""
+	embeddedRXArch = ""
 )
