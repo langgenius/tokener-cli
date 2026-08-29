@@ -5,7 +5,7 @@ INSTALL_DIR ?= $(HOME)/.local/bin
 
 cli-sync:
 	cp cli.yaml cmd/tokener/cli.yaml
-	go run github.com/lathe-cli/lathe/cmd/lathe@$(LATHE_VERSION) bootstrap
+	go run github.com/lathe-cli/lathe/cmd/lathe@$(LATHE_VERSION) bootstrap -overlay overlays
 	go mod tidy
 
 cli-build:

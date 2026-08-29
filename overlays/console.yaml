@@ -1,0 +1,487 @@
+groups:
+  billing:
+    short: Inspect credits, purchases, and ledger activity
+  identity:
+    short: Inspect the authenticated management identity
+  keys:
+    short: Create and manage Tokener.ai API keys
+  models:
+    short: Browse models available through Tokener.ai
+  partners:
+    short: Operate organizations and credits with a Partner control token
+  usage:
+    short: Inspect spend and model usage
+
+commands:
+  balance:
+    match:
+      method: GET
+      path: /api/v1/billing/balance
+    short: Show the available Tokener.ai credit balance
+    long: |
+      Shows the purchased, granted, and total available credits for the
+      authenticated organization. Monetary values are returned in micro-USD.
+    example: |
+      tokener billing balance
+      tokener billing balance -o json
+
+  ledger:
+    match:
+      method: GET
+      path: /api/v1/billing/ledger
+    short: List credit ledger activity
+    long: |
+      Lists the organization's append-only credit ledger. Use --all to follow
+      every page or --cursor to continue from a previously returned page.
+      Monetary values are returned in micro-USD.
+    example: |
+      tokener billing ledger --limit 25
+      tokener billing ledger --all -o json
+    params:
+      cursor:
+        help: Opaque cursor returned by the previous page
+      limit:
+        help: Number of ledger entries per page (1-100)
+
+  purchases:
+    match:
+      method: GET
+      path: /api/v1/billing/purchases
+    short: List credit purchases
+    long: |
+      Lists purchases that added prepaid credits to the organization. Use
+      --all to follow every page or --cursor to continue from a previous page.
+    example: |
+      tokener billing purchases --limit 25
+      tokener billing purchases --all -o json
+    params:
+      cursor:
+        help: Opaque cursor returned by the previous page
+      limit:
+        help: Number of purchases per page (1-100)
+
+  whoami:
+    match:
+      method: GET
+      path: /api/v1/whoami
+    short: Show the authenticated user and organization
+    long: |
+      Validates the configured management token and shows the user,
+      organization, token name, and email-verification state behind it.
+    example: |
+      tokener identity whoami
+      tokener identity whoami -o json
+
+  create:
+    match:
+      method: POST
+      path: /api/v1/keys
+    short: Create an API key
+    long: |
+      Creates a Tokener.ai API key and returns its plaintext secret. Set simple
+      body fields with --set or --set-str, or pass a complete JSON body with
+      --file. Treat the response as a credential.
+    example: |
+      tokener keys create --set-str name=production -o json
+      tokener keys create \
+        --set-str name=production \
+        --set limits.maxBudgetUsd=100 \
+        --set-str limits.budgetDuration=monthly \
+        -o json
+
+  list:
+    match:
+      method: GET
+      path: /api/v1/keys
+    short: List API keys and 30-day spend
+    long: |
+      Lists API keys for the authenticated organization, including lifecycle
+      status, limits, last use, and 30-day spend. Plaintext secrets are never
+      included. Spend values are returned in micro-USD.
+    example: |
+      tokener keys list
+      tokener keys list -o json
+
+  reveal:
+    match:
+      method: POST
+      path: /api/v1/keys/{id}/reveal
+    short: Reveal an API key secret
+    long: |
+      Returns the plaintext secret for a key that has not been revoked. The
+      output is sensitive and should not be written to logs or shell history.
+    example: |
+      tokener keys reveal <key-id> -o json
+    params:
+      id:
+        argument: key-id
+        help: API key ID
+
+  revoke:
+    match:
+      method: POST
+      path: /api/v1/keys/{id}/revoke
+    short: Permanently revoke an API key
+    long: |
+      Permanently revokes an API key. A revoked key cannot make model calls or
+      have its plaintext secret revealed again.
+    example: |
+      tokener keys revoke <key-id> -o json
+    params:
+      id:
+        argument: key-id
+        help: API key ID
+
+  set-status:
+    match:
+      method: POST
+      path: /api/v1/keys/{id}/status
+    short: Enable or disable an API key
+    long: |
+      Sets an API key to active or disabled. The change may remain in a
+      preparing state until model-call enforcement converges.
+    example: |
+      tokener keys set-status <key-id> --set-str status=disabled -o json
+      tokener keys set-status <key-id> --set-str status=active -o json
+    params:
+      id:
+        argument: key-id
+        help: API key ID
+
+  update-limits:
+    match:
+      method: PATCH
+      path: /api/v1/keys/{id}/limits
+    use: replace-limits
+    aliases: [update-limits]
+    short: Replace all limits for an API key
+    long: |
+      Replaces the key's complete budget, rate, model, concurrency, and expiry
+      limit set. This is not a partial update: every omitted or null field is
+      cleared. Always provide the complete desired state.
+    example: |
+      tokener keys replace-limits <key-id> --file limits.json -o json
+    params:
+      id:
+        argument: key-id
+        help: API key ID
+
+  catalog:
+    match:
+      method: GET
+      path: /api/v1/models
+    use: list
+    aliases: [catalog]
+    short: List models available to the organization
+    long: |
+      Lists customer-facing models currently available through Tokener.ai,
+      including provider, category, context size, availability, and pricing.
+    example: |
+      tokener models list
+      tokener models list -o json
+
+  public-model-catalog:
+    match:
+      method: GET
+      path: /api/public/v1/models
+    hidden: true
+    short: Get the anonymous machine catalog
+    long: |
+      Returns the stable, versioned anonymous model catalog intended for
+      external integrations. This command does not require authentication.
+    example: |
+      tokener models public-model-catalog -o json
+
+  summary:
+    match:
+      method: GET
+      path: /api/v1/usage/summary
+    short: Show usage totals
+    long: |
+      Shows total requests, tokens, cache activity, and billed spend for a
+      7- or 30-day usage window.
+    example: |
+      tokener usage summary
+      tokener usage summary --range 30 -o json
+    params:
+      range:
+        help: Usage window in days (7 or 30)
+
+  series:
+    match:
+      method: GET
+      path: /api/v1/usage/series
+    use: daily
+    aliases: [series]
+    short: Show daily usage
+    long: |
+      Shows one usage point per day with per-model segments for a 7- or 30-day
+      window.
+    example: |
+      tokener usage daily
+      tokener usage daily --range 30 -o json
+    params:
+      range:
+        help: Usage window in days (7 or 30)
+
+  breakdown:
+    match:
+      method: GET
+      path: /api/v1/usage/breakdown
+    use: by-model
+    aliases: [breakdown]
+    short: Show usage grouped by model
+    long: |
+      Aggregates requests, tokens, cache activity, and billed spend by model
+      for a 7- or 30-day window.
+    example: |
+      tokener usage by-model
+      tokener usage by-model --range 30 -o json
+    params:
+      range:
+        help: Usage window in days (7 or 30)
+
+  provision-partner-organization:
+    match:
+      method: POST
+      path: /api/partner/v1/organizations
+    use: provision
+    aliases: [provision-partner-organization]
+    short: Provision a Partner organization
+    long: |
+      Creates or idempotently returns the organization identified by the
+      Partner-owned external reference. A newly created organization returns
+      its initial model API key once; an idempotent replay does not.
+    example: |
+      tokener partners provision \
+        --set-str externalRef=customer-123 \
+        --set-str displayName='Customer 123' \
+        -o json
+
+  get-partner-organization:
+    match:
+      method: GET
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}
+    use: organization
+    aliases: [get-partner-organization]
+    short: Show a Partner organization
+    long: |
+      Shows the provisioning and readiness state of a Partner-managed
+      organization identified by its external reference.
+    example: |
+      tokener partners organization <external-ref> -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  set-partner-organization-status:
+    match:
+      method: PATCH
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}
+    use: set-status
+    aliases: [set-partner-organization-status]
+    short: Suspend or resume a Partner organization
+    long: |
+      Requests the active or suspended workspace state. The returned readiness
+      remains preparing until model-call enforcement converges.
+    example: |
+      tokener partners set-status <external-ref> \
+        --set-str desiredStatus=suspended \
+        -o json
+      tokener partners set-status <external-ref> \
+        --set-str desiredStatus=active \
+        -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  rotate-partner-organization-key:
+    match:
+      method: POST
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}/key
+    use: rotate-key
+    aliases: [rotate-partner-organization-key]
+    short: Rotate a Partner organization's API key
+    long: |
+      Replaces the organization's model API key. Reusing the same operation ID
+      returns the same replacement secret. Treat the response as a credential.
+    example: |
+      tokener partners rotate-key <external-ref> \
+        --set-str operationId=<uuid> \
+        -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  revoke-partner-organization-key:
+    match:
+      method: DELETE
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}/key
+    use: revoke-key
+    aliases: [revoke-partner-organization-key]
+    short: Permanently revoke a Partner organization's API key
+    long: |
+      Suspends the workspace and permanently revokes its current model API key
+      while retaining billing and audit records.
+    example: |
+      tokener partners revoke-key <external-ref> -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  get-partner-organization-models:
+    match:
+      method: GET
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}/models
+    use: models
+    aliases: [get-partner-organization-models]
+    short: List models callable by a Partner organization
+    long: |
+      Lists the models currently callable by the Partner-managed organization.
+      Only a usable workspace returns callable models.
+    example: |
+      tokener partners models <external-ref>
+      tokener partners models <external-ref> -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  get-partner-organization-balance:
+    match:
+      method: GET
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}/balance
+    use: balance
+    aliases: [get-partner-organization-balance]
+    short: Show a Partner organization's credit balance
+    long: |
+      Shows purchased, promotional, and active allowance credits for the
+      Partner-managed organization. Monetary values are returned in micro-USD.
+    example: |
+      tokener partners balance <external-ref>
+      tokener partners balance <external-ref> -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+
+  get-partner-organization-usage:
+    match:
+      method: GET
+      path: /api/partner/v1/organizations/by-external-ref/{externalRef}/usage
+    use: usage
+    aliases: [get-partner-organization-usage]
+    short: Show usage for a Partner organization
+    long: |
+      Shows model usage for an inclusive UTC date range of 1 to 366 days. The
+      end date cannot be in the future.
+    example: |
+      tokener partners usage <external-ref> \
+        --start-date 2026-08-01 \
+        --end-date 2026-08-28 \
+        -o json
+    params:
+      externalRef:
+        argument: external-ref
+        help: Partner-owned organization reference
+      startDate:
+        help: Inclusive UTC start date (YYYY-MM-DD)
+      endDate:
+        help: Inclusive UTC end date (YYYY-MM-DD)
+
+  post-partner-credit-event:
+    match:
+      method: POST
+      path: /api/partner/v1/credit-events
+    use: post-credit-event
+    aliases: [post-partner-credit-event]
+    short: Post a Partner credit event
+    long: |
+      Posts an idempotent purchase, grant, refund, or dispute event. Refund and
+      lost-dispute events must reference a purchase, and their combined amount
+      cannot exceed it. Monetary values use micro-USD.
+    example: |
+      tokener partners post-credit-event --file credit-event.json -o json
+
+  get-partner-credit-event:
+    match:
+      method: GET
+      path: /api/partner/v1/credit-events/{eventId}
+    use: credit-event
+    aliases: [get-partner-credit-event]
+    short: Show a Partner credit event
+    long: |
+      Shows an accepted credit event owned by the authenticated Partner and
+      organization reference.
+    example: |
+      tokener partners credit-event <event-id> \
+        --external-ref customer-123 \
+        -o json
+    params:
+      eventId:
+        argument: event-id
+        help: Partner-owned credit event ID
+      externalRef:
+        help: Partner-owned organization reference
+
+  create-partner-allowance-window:
+    match:
+      method: POST
+      path: /api/partner/v1/allowance-windows
+    use: schedule-allowance
+    aliases: [create-partner-allowance-window]
+    short: Schedule a Partner allowance window
+    long: |
+      Schedules an idempotent recurring-credit window using half-open UTC day
+      boundaries. Windows cannot overlap or start before the current UTC day,
+      and accepted windows activate asynchronously. Monetary values use
+      micro-USD.
+    example: |
+      tokener partners schedule-allowance --file allowance.json -o json
+
+  get-partner-allowance-window:
+    match:
+      method: GET
+      path: /api/partner/v1/allowance-windows/{windowId}
+    use: allowance
+    aliases: [get-partner-allowance-window]
+    short: Show a Partner allowance window
+    long: |
+      Shows an accepted allowance window owned by the authenticated Partner and
+      organization reference.
+    example: |
+      tokener partners allowance <window-id> \
+        --external-ref customer-123 \
+        -o json
+    params:
+      windowId:
+        argument: window-id
+        help: Partner-owned allowance window ID
+      externalRef:
+        help: Partner-owned organization reference
+
+  correct-partner-allowance-window:
+    match:
+      method: POST
+      path: /api/partner/v1/allowance-windows/{windowId}/corrections
+    use: correct-allowance
+    aliases: [correct-partner-allowance-window]
+    short: Correct a Partner allowance window
+    long: |
+      Posts an immutable positive or negative allowance correction. Reducing a
+      future window to zero cancels it; correcting an active window updates its
+      balance and budget projections atomically. Monetary values use micro-USD.
+    example: |
+      tokener partners correct-allowance <window-id> \
+        --set-str correctionId=correction-123 \
+        --set-str externalRef=customer-123 \
+        --set-str deltaUsdMicro=-5000000 \
+        -o json
+    params:
+      windowId:
+        argument: window-id
+        help: Partner-owned allowance window ID
