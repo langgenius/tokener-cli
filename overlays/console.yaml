@@ -24,6 +24,14 @@ commands:
     example: |
       tokener billing balance
       tokener billing balance -o json
+    output:
+      default_columns: [availableUsdMicro, purchasedAvailableUsdMicro, grantedAvailableUsdMicro, status, updatedAt]
+      column_labels:
+        availableUsdMicro: "TOTAL (MICRO-USD)"
+        purchasedAvailableUsdMicro: "PURCHASED (MICRO-USD)"
+        grantedAvailableUsdMicro: "GRANTED (MICRO-USD)"
+        status: STATUS
+        updatedAt: UPDATED
 
   ledger:
     match:
@@ -37,6 +45,15 @@ commands:
     example: |
       tokener billing ledger --limit 25
       tokener billing ledger --all -o json
+    output:
+      default_columns: [occurredAt, amountUsdMicro, type, sourceType, description, id]
+      column_labels:
+        occurredAt: TIME
+        amountUsdMicro: "AMOUNT (MICRO-USD)"
+        type: TYPE
+        sourceType: SOURCE
+        description: DESCRIPTION
+        id: ID
     params:
       cursor:
         help: Opaque cursor returned by the previous page
@@ -54,6 +71,15 @@ commands:
     example: |
       tokener billing purchases --limit 25
       tokener billing purchases --all -o json
+    output:
+      default_columns: [createdAt, status, amountCents, creditAmountUsdMicro, currency, id]
+      column_labels:
+        createdAt: TIME
+        status: STATUS
+        amountCents: "PAID (CENTS)"
+        creditAmountUsdMicro: "CREDIT (MICRO-USD)"
+        currency: CURRENCY
+        id: ID
     params:
       cursor:
         help: Opaque cursor returned by the previous page
@@ -71,6 +97,14 @@ commands:
     example: |
       tokener identity whoami
       tokener identity whoami -o json
+    output:
+      default_columns: [email, emailVerified, tokenName, organizationId, userId]
+      column_labels:
+        email: EMAIL
+        emailVerified: VERIFIED
+        tokenName: TOKEN
+        organizationId: ORGANIZATION
+        userId: USER
 
   create:
     match:
@@ -101,6 +135,15 @@ commands:
     example: |
       tokener keys list
       tokener keys list -o json
+    output:
+      default_columns: [name, status, prefix, spend30d, lastUsedAt, id]
+      column_labels:
+        name: NAME
+        status: STATUS
+        prefix: PREFIX
+        spend30d: "SPEND 30D (MICRO-USD)"
+        lastUsedAt: "LAST USED"
+        id: ID
 
   reveal:
     match:
@@ -179,6 +222,15 @@ commands:
     example: |
       tokener models list
       tokener models list -o json
+    output:
+      default_columns: [id, name, provider, context, inputPer1m, outputPer1m]
+      column_labels:
+        id: MODEL
+        name: NAME
+        provider: PROVIDER
+        context: CONTEXT
+        inputPer1m: "INPUT / 1M"
+        outputPer1m: "OUTPUT / 1M"
 
   public-model-catalog:
     match:
@@ -203,6 +255,15 @@ commands:
     example: |
       tokener usage summary
       tokener usage summary --range 30 -o json
+    output:
+      default_columns: [summary.requests, summary.tokens, summary.spendUsdMicro, summary.inputTokens, summary.outputTokens, summary.cacheReadInputTokens]
+      column_labels:
+        summary.requests: REQUESTS
+        summary.tokens: TOKENS
+        summary.spendUsdMicro: "SPEND (MICRO-USD)"
+        summary.inputTokens: INPUT
+        summary.outputTokens: OUTPUT
+        summary.cacheReadInputTokens: "CACHE READ"
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -220,6 +281,13 @@ commands:
     example: |
       tokener usage daily
       tokener usage daily --range 30 -o json
+    output:
+      default_columns: [day, requests, tokens, spendUsdMicro]
+      column_labels:
+        day: DAY
+        requests: REQUESTS
+        tokens: TOKENS
+        spendUsdMicro: "SPEND (MICRO-USD)"
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -237,6 +305,15 @@ commands:
     example: |
       tokener usage by-model
       tokener usage by-model --range 30 -o json
+    output:
+      default_columns: [key, requests, inputTokens, outputTokens, cacheReadInputTokens, spendUsdMicro]
+      column_labels:
+        key: MODEL
+        requests: REQUESTS
+        inputTokens: INPUT
+        outputTokens: OUTPUT
+        cacheReadInputTokens: "CACHE READ"
+        spendUsdMicro: "SPEND (MICRO-USD)"
     params:
       range:
         help: Usage window in days (7 or 30)
@@ -270,6 +347,11 @@ commands:
       organization identified by its external reference.
     example: |
       tokener partners organization <external-ref> -o json
+    output:
+      default_columns: [externalRef, status]
+      column_labels:
+        externalRef: ORGANIZATION
+        status: STATUS
     params:
       externalRef:
         argument: external-ref
@@ -346,6 +428,15 @@ commands:
     example: |
       tokener partners models <external-ref>
       tokener partners models <external-ref> -o json
+    output:
+      default_columns: [id, label, provider, contextSize, pricing.inputPerMillion, pricing.outputPerMillion]
+      column_labels:
+        id: MODEL
+        label: NAME
+        provider: PROVIDER
+        contextSize: CONTEXT
+        pricing.inputPerMillion: "INPUT (USD / 1M)"
+        pricing.outputPerMillion: "OUTPUT (USD / 1M)"
     params:
       externalRef:
         argument: external-ref
@@ -364,6 +455,15 @@ commands:
     example: |
       tokener partners balance <external-ref>
       tokener partners balance <external-ref> -o json
+    output:
+      default_columns: [externalRef, availableUsdMicro, purchasedAvailableUsdMicro, promotionalAvailableUsdMicro, allowance.availableUsdMicro, generatedAt]
+      column_labels:
+        externalRef: ORGANIZATION
+        availableUsdMicro: "TOTAL (MICRO-USD)"
+        purchasedAvailableUsdMicro: "PURCHASED (MICRO-USD)"
+        promotionalAvailableUsdMicro: "PROMOTIONAL (MICRO-USD)"
+        allowance.availableUsdMicro: "ALLOWANCE (MICRO-USD)"
+        generatedAt: GENERATED
     params:
       externalRef:
         argument: external-ref
@@ -384,6 +484,15 @@ commands:
         --start-date 2026-08-01 \
         --end-date 2026-08-28 \
         -o json
+    output:
+      default_columns: [model, requests, inputTokens, outputTokens, cacheReadInputTokens, billedUsdMicro]
+      column_labels:
+        model: MODEL
+        requests: REQUESTS
+        inputTokens: INPUT
+        outputTokens: OUTPUT
+        cacheReadInputTokens: "CACHE READ"
+        billedUsdMicro: "SPEND (MICRO-USD)"
     params:
       externalRef:
         argument: external-ref
@@ -421,6 +530,15 @@ commands:
       tokener partners credit-event <event-id> \
         --external-ref customer-123 \
         -o json
+    output:
+      default_columns: [eventId, externalRef, type, amountUsdMicro, occurredAt, relatedEventId]
+      column_labels:
+        eventId: EVENT
+        externalRef: ORGANIZATION
+        type: TYPE
+        amountUsdMicro: "AMOUNT (MICRO-USD)"
+        occurredAt: TIME
+        relatedEventId: RELATED
     params:
       eventId:
         argument: event-id
@@ -457,6 +575,15 @@ commands:
       tokener partners allowance <window-id> \
         --external-ref customer-123 \
         -o json
+    output:
+      default_columns: [windowId, externalRef, status, effectiveAmountUsdMicro, startsAt, endsAt]
+      column_labels:
+        windowId: WINDOW
+        externalRef: ORGANIZATION
+        status: STATUS
+        effectiveAmountUsdMicro: "AMOUNT (MICRO-USD)"
+        startsAt: START
+        endsAt: END
     params:
       windowId:
         argument: window-id

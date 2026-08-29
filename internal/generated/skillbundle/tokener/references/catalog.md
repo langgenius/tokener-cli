@@ -15,10 +15,12 @@ Key fields:
 - `path`: command path to pass to `commands show` or execute after the CLI name.
 - `shortcuts`: root-level commands that execute the same operation with preset flag values.
 - `http`: HTTP method and path template.
-- `http.default_hostname`: optional source-level host selected after explicit `--hostname` and `$TOKENER_HOST`; when present it is used before the single-host fallback from `hosts.yml`.
+- `http.default_hostname`: optional source-level host used after `--hostname`, `$TOKENER_HOST`, and the host selected with `auth use`, and before the single-host fallback from `hosts.yml`.
 - `flags`: CLI flags, parameter location, type, required state, defaults, enum values, format, input modes, and help.
 - `body`: request body requirement, media type, and optional `runtime_schema` preflight source, including its active-context prerequisites.
 - `auth`: whether auth is required and which scopes are declared.
+- `mutation`: `read`, `write`, or `unknown`. Do not infer write vs read from the HTTP method alone. Treat any value other than `read` as requiring preview when `dry_run.mode` is `http_preview`, or explicit user confirmation when preview is unavailable.
+- `dry_run`: preview contract. `http_preview` is declared only when the generated runner can preview; use `--<flag>` and print the resolved HTTP request JSON. `unsupported` means the command has no preview, including all workflow commands. A `--dry-run` flag on a custom command is not a preview contract.
 - `examples`: runnable examples with optional body shape, output hints, and follow-up commands.
 - `output`: list path, default columns, response media type, pagination, and streaming hints; a streaming policy describes collection, terminal outcomes, and optional live projection.
 - `flags[].context`: an optional account-scoped default with explicit flag, declared environment, then stored-value precedence.
@@ -27,11 +29,11 @@ Key fields:
 
 ## Command Detail
 
-Run `tokener commands show <path...> --json` before executing an unfamiliar command. This is the source of truth for flags, body, auth, HTTP path, and output hints.
+Run `tokener commands show <path...> --json` before executing an unfamiliar command. This is the source of truth for flags, body, auth, HTTP path, `mutation`, `dry_run`, and output hints.
 
 ## Schema
 
-Run `tokener commands schema --json` to read the catalog schema version before parsing catalog JSON with durable tooling.
+Run `tokener commands schema --json` to read `catalog_schema_version`, `surfaces`, and `dry_run.result` before parsing catalog JSON with durable tooling. `dry_run.result=http_preview` means a preview prints the resolved HTTP request JSON (`method`, `url`, `hostname`, `host_source`, `headers`, `body`, `auth`, `output`).
 
 ## Sensitive Flags
 
@@ -50,7 +52,7 @@ When a flag entry has `input_modes`, prefer safe modes over putting secrets dire
 - `--set key.path=value`: build JSON with type inference for booleans, null, integers, and floats.
 - `--set-str key.path=value`: build JSON while forcing the value to remain a string.
 
-If `body.runtime_schema` is present, normal execution fetches that JSON Schema and validates the body before the target request. `--dry-run` does not fetch it.
+If `body.runtime_schema` is present, normal execution fetches that JSON Schema and validates the body before the target request. An `http_preview` dry-run does not fetch it.
 
 ## Output
 
@@ -60,4 +62,4 @@ On a non-zero exit with JSON or YAML output, read `error.code`, `error.message`,
 
 ## Auth
 
-If command detail returns `auth.required=true`, run `tokener auth status --hostname <host>` before execution. Use `http.default_hostname` when present unless the user provides `--hostname` or `$TOKENER_HOST`; if no matching host is logged in, stop and ask the user to authenticate.
+If command detail returns `auth.required=true`, run `tokener auth status -o json` before execution and read `hostname` and `source`. Host resolution order: `--hostname` > `$TOKENER_HOST` > the selected host (`tokener auth use <host>`) > `http.default_hostname` > the single host in `hosts.yml`. When more than one host is logged in and the host was chosen implicitly, the CLI also prints a `current host: <name>` line on stderr; read provenance from `auth status`, not from that line. If no matching host is logged in, stop and ask the user to authenticate.
