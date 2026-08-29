@@ -223,13 +223,15 @@ commands:
     match:
       method: POST
       path: /api/v1/keys/{id}/status
+    body:
+      flags: true
     short: Enable or disable an API key
     long: |
       Sets an API key to active or disabled. The change may remain in a
       preparing state until model-call enforcement converges.
     example: |
-      tokener keys set-status <key-id> --set-str status=disabled -o json
-      tokener keys set-status <key-id> --set-str status=active -o json
+      tokener keys set-status <key-id> --status disabled -o json
+      tokener keys set-status <key-id> --status active -o json
     params:
       id:
         argument: key-id
@@ -239,8 +241,9 @@ commands:
     match:
       method: PATCH
       path: /api/v1/keys/{id}/limits
+    body:
+      flags: true
     use: replace-limits
-    aliases: [update-limits]
     short: Replace all limits for an API key
     long: |
       Replaces the key's complete budget, rate, model, concurrency, and expiry
@@ -248,6 +251,11 @@ commands:
       cleared. Always provide the complete desired state.
     example: |
       tokener keys replace-limits <key-id> --file limits.json -o json
+      tokener keys replace-limits <key-id> \
+        --max-budget-usd 100 \
+        --budget-duration monthly \
+        --rpm-limit 60 \
+        -o json
     params:
       id:
         argument: key-id

@@ -8,7 +8,7 @@ import (
 	"github.com/lathe-cli/lathe/pkg/runtime"
 )
 
-const generatedSchemaVersion = 12
+const generatedSchemaVersion = 13
 
 func Mount(root *cobra.Command) error {
 	if err := runtime.AssertSchema(generatedSchemaVersion); err != nil {
@@ -103,7 +103,7 @@ var Specs = []runtime.CommandSpec{
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
+			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Enum: []string{"daily", "weekly", "monthly"}, Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Format: "date-time", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
 		},
 		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
@@ -162,18 +162,19 @@ var Specs = []runtime.CommandSpec{
 		Use:             "set-status",
 		Short:           "Enable or disable an API key",
 		Long:            "Sets an API key to active or disabled. The change may remain in a\npreparing state until model-call enforcement converges.\n",
-		Example:         "tokener keys set-status <key-id> --set-str status=disabled -o json\ntokener keys set-status <key-id> --set-str status=active -o json\n",
+		Example:         "tokener keys set-status <key-id> --status disabled -o json\ntokener keys set-status <key-id> --status active -o json\n",
 		OperationID:     "setStatus",
 		Method:          "POST",
 		PathTpl:         "/api/v1/keys/{id}/status",
 		DefaultHostname: "console.tokener.dev",
 		Params: []runtime.ParamSpec{
 			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
+			{Name: "status", Flag: "status", In: "body", GoType: "string", Help: "status (body, required, one of: active|disabled)", Required: true, Enum: []string{"active", "disabled"}},
 		},
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"status": &runtime.SchemaSpec{Type: "string"}}, Required: []string{"status"}},
+			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"status": &runtime.SchemaSpec{Type: "string", Enum: []string{"active", "disabled"}}}, Required: []string{"status"}},
 		},
 		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
@@ -182,21 +183,27 @@ var Specs = []runtime.CommandSpec{
 		Group:           "keys",
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "replace-limits",
-		Aliases:         []string{"update-limits"},
 		Short:           "Replace all limits for an API key",
 		Long:            "Replaces the key's complete budget, rate, model, concurrency, and expiry\nlimit set. This is not a partial update: every omitted or null field is\ncleared. Always provide the complete desired state.\n",
-		Example:         "tokener keys replace-limits <key-id> --file limits.json -o json\n",
+		Example:         "tokener keys replace-limits <key-id> --file limits.json -o json\ntokener keys replace-limits <key-id> \\\n  --max-budget-usd 100 \\\n  --budget-duration monthly \\\n  --rpm-limit 60 \\\n  -o json\n",
 		OperationID:     "updateLimits",
 		Method:          "PATCH",
 		PathTpl:         "/api/v1/keys/{id}/limits",
 		DefaultHostname: "console.tokener.dev",
 		Params: []runtime.ParamSpec{
 			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
+			{Name: "allowedModels", Flag: "allowed-models", In: "body", GoType: "[]string", Help: "allowedModels (body)", Required: false},
+			{Name: "budgetDuration", Flag: "budget-duration", In: "body", GoType: "string", Help: "budgetDuration (body, one of: daily|weekly|monthly)", Required: false, Enum: []string{"daily", "weekly", "monthly"}},
+			{Name: "expiresAt", Flag: "expires-at", In: "body", GoType: "string", Help: "expiresAt (body, date-time)", Required: false, Format: "date-time"},
+			{Name: "maxBudgetUsd", Flag: "max-budget-usd", In: "body", GoType: "float64", Help: "maxBudgetUsd (body)", Required: false},
+			{Name: "maxParallelRequests", Flag: "max-parallel-requests", In: "body", GoType: "int64", Help: "maxParallelRequests (body)", Required: false},
+			{Name: "rpmLimit", Flag: "rpm-limit", In: "body", GoType: "int64", Help: "rpmLimit (body)", Required: false},
+			{Name: "tpmLimit", Flag: "tpm-limit", In: "body", GoType: "int64", Help: "tpmLimit (body)", Required: false},
 		},
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}},
+			Schema:    &runtime.SchemaSpec{Type: "object", Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Enum: []string{"daily", "weekly", "monthly"}, Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Format: "date-time", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}},
 		},
 		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
