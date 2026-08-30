@@ -181,16 +181,24 @@ commands:
       tokener keys list
       tokener keys list -o json
     output:
-      default_columns: [name, status, prefix, spend30d, lastUsedAt, id]
+      default_columns: [name, status, prefix, spend30d, limits.maxBudgetUsdMicro, lastUsedAt, id]
       column_labels:
         name: NAME
         status: STATUS
         prefix: PREFIX
         spend30d: "SPEND 30D"
+        limits.maxBudgetUsdMicro: BUDGET
         lastUsedAt: "LAST USED"
         id: ID
       column_formats:
         spend30d:
+          kind: currency
+          currency: USD
+          source_scale: 6
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 6
+        limits.maxBudgetUsdMicro:
           kind: currency
           currency: USD
           source_scale: 6
@@ -206,6 +214,11 @@ commands:
     long: |
       Returns the plaintext secret for a key that has not been revoked. The
       output is sensitive and should not be written to logs or shell history.
+    notes:
+      - The output is a credential. Do not write it to logs or shell history.
+    known_errors:
+      - status: 400
+        cause: The key is already revoked.
     example: |
       tokener keys reveal <key-id> -o json
     params:
@@ -221,6 +234,9 @@ commands:
     long: |
       Permanently revokes an API key. A revoked key cannot make model calls or
       have its plaintext secret revealed again.
+    known_errors:
+      - status: 400
+        cause: The key is already revoked.
     example: |
       tokener keys revoke <key-id> -o json
     params:
@@ -238,6 +254,9 @@ commands:
     long: |
       Sets an API key to active or disabled. The change may remain in a
       preparing state until model-call enforcement converges.
+    known_errors:
+      - status: 400
+        cause: The key is already revoked.
     example: |
       tokener keys set-status <key-id> --status disabled -o json
       tokener keys set-status <key-id> --status active -o json
@@ -258,12 +277,18 @@ commands:
       Replaces the key's complete budget, rate, model, concurrency, and expiry
       limit set. This is not a partial update: every omitted or null field is
       cleared. Always provide the complete desired state.
+    notes:
+      - "This is a full replacement: omitted fields are cleared."
     example: |
       tokener keys replace-limits <key-id> --file limits.json -o json
       tokener keys replace-limits <key-id> \
         --max-budget-usd 100 \
         --budget-duration monthly \
         --rpm-limit 60 \
+        --tpm-limit 100000 \
+        --max-parallel-requests 4 \
+        --expires-at 2027-01-01T00:00:00Z \
+        --allowed-models gpt-5 \
         -o json
     params:
       id:
