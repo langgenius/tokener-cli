@@ -161,7 +161,8 @@ commands:
       flags: true
     short: Create an API key
     long: |
-      Creates a Tokener.ai API key and returns its plaintext secret. Set simple
+      Creates a Tokener.ai API key and returns its plaintext secret. The name
+      is optional: the server generates one when it is omitted. Set simple
       body fields with --set or --set-str, or pass a complete JSON body with
       --file. Treat the response as a credential. The plaintext secret appears
       only in the key field of structured output and via keys reveal.
