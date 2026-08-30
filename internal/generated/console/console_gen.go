@@ -94,7 +94,7 @@ var Specs = []runtime.CommandSpec{
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "create",
 		Short:           "Create an API key",
-		Long:            "Creates a Tokener.ai API key and returns its plaintext secret. Set simple\nbody fields with --set or --set-str, or pass a complete JSON body with\n--file. Treat the response as a credential.\n",
+		Long:            "Creates a Tokener.ai API key and returns its plaintext secret. Set simple\nbody fields with --set or --set-str, or pass a complete JSON body with\n--file. Treat the response as a credential. The plaintext secret appears\nonly in the key field of structured output and via keys reveal.\n",
 		Example:         "tokener keys create --set-str name=production -o json\ntokener keys create \\\n  --set-str name=production \\\n  --set limits.maxBudgetUsd=100 \\\n  --set-str limits.budgetDuration=monthly \\\n  -o json\n",
 		OperationID:     "create",
 		Method:          "POST",
@@ -105,7 +105,7 @@ var Specs = []runtime.CommandSpec{
 			MediaType: "application/json",
 			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Enum: []string{"daily", "weekly", "monthly"}, Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Format: "date-time", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "number", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
+		Output:   runtime.OutputHints{DefaultColumns: []string{"record.name", "record.prefix", "record.status", "record.id", "record.createdAt"}, ColumnLabels: map[string]string{"record.createdAt": "CREATED", "record.id": "ID", "record.name": "NAME", "record.prefix": "PREFIX", "record.status": "STATUS"}, ResponseMediaType: "application/json"},
 		Security: &runtime.SecurityHint{},
 	},
 	{

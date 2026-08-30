@@ -150,7 +150,8 @@ commands:
     long: |
       Creates a Tokener.ai API key and returns its plaintext secret. Set simple
       body fields with --set or --set-str, or pass a complete JSON body with
-      --file. Treat the response as a credential.
+      --file. Treat the response as a credential. The plaintext secret appears
+      only in the key field of structured output and via keys reveal.
     example: |
       tokener keys create --set-str name=production -o json
       tokener keys create \
@@ -158,6 +159,14 @@ commands:
         --set limits.maxBudgetUsd=100 \
         --set-str limits.budgetDuration=monthly \
         -o json
+    output:
+      default_columns: [record.name, record.prefix, record.status, record.id, record.createdAt]
+      column_labels:
+        record.name: NAME
+        record.prefix: PREFIX
+        record.status: STATUS
+        record.id: ID
+        record.createdAt: CREATED
 
   list:
     match:

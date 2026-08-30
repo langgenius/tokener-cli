@@ -86,7 +86,7 @@ tokener identity whoami -o json
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
-- Output: response media `application/json`
+- Output: columns `record.name`, `record.prefix`, `record.status`, `record.id`, `record.createdAt`; response media `application/json`
 - Example:
 
 ```
