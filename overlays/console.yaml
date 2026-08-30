@@ -133,6 +133,8 @@ commands:
     match:
       method: GET
       path: /api/v1/whoami
+    shortcuts:
+      - use: whoami
     short: Show the authenticated user and organization
     long: |
       Validates the configured management token and shows the user,

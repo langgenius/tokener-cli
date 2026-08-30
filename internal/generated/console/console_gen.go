@@ -76,9 +76,12 @@ var Specs = []runtime.CommandSpec{
 		Security: &runtime.SecurityHint{},
 	},
 	{
-		Group:           "identity",
-		GroupShort:      "Inspect the authenticated management identity",
-		Use:             "whoami",
+		Group:      "identity",
+		GroupShort: "Inspect the authenticated management identity",
+		Use:        "whoami",
+		Shortcuts: []runtime.CommandShortcut{
+			{Use: "whoami"},
+		},
 		Short:           "Show the authenticated user and organization",
 		Long:            "Validates the configured management token and shows the user,\norganization, token name, and email-verification state behind it.\n",
 		Example:         "tokener identity whoami\ntokener identity whoami -o json\n",

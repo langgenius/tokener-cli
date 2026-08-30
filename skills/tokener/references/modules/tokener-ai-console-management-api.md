@@ -68,6 +68,8 @@ tokener billing purchases --all -o json
 - HTTP: `GET /api/v1/whoami`
 - Auth: required
 - Body: none
+- Shortcuts:
+  - `tokener whoami`
 - Flags: none
 - Output: columns `email`, `emailVerified`, `tokenName`, `organizationId`, `userId`; response media `application/json`
 - Example:
