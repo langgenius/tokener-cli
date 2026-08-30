@@ -19,6 +19,7 @@
 - Body: none
 - Flags: none
 - Output: columns `availableUsdMicro`, `purchasedAvailableUsdMicro`, `grantedAvailableUsdMicro`, `status`, `updatedAt`; response media `application/json`
+- Search terms: `credit`, `credits`
 - Example:
 
 ```
@@ -36,6 +37,7 @@ tokener billing balance -o json
   - `--cursor` (query): Opaque cursor returned by the previous page
   - `--limit` (query): Number of ledger entries per page
 - Output: list path `items`; columns `occurredAt`, `amountUsdMicro`, `type`, `sourceType`, `description`, `id`; response media `application/json`; pagination `cursor`
+- Search terms: `credit`, `credits`
 - Example:
 
 ```
@@ -87,14 +89,15 @@ tokener identity whoami -o json
 - HTTP: `POST /api/v1/keys`
 - Auth: required
 - Body: required; media type `application/json`
-- Flags: none
+- Flags:
+  - `--name` (body): name
 - Output: columns `record.name`, `record.prefix`, `record.status`, `record.id`, `record.createdAt`; response media `application/json`
 - Example:
 
 ```
-tokener keys create --set-str name=production -o json
+tokener keys create --name production -o json
 tokener keys create \
-  --set-str name=production \
+  --name production \
   --set limits.maxBudgetUsd=100 \
   --set-str limits.budgetDuration=monthly \
   -o json
@@ -159,6 +162,7 @@ tokener keys replace-limits <key-id> \
 - Output: response media `application/json`
 - Notes:
   - The output is a credential. Do not write it to logs or shell history.
+- Search terms: `secret`
 - Known errors:
   - HTTP 400: The key is already revoked.
 - Example: `tokener keys reveal <key-id> -o json`
@@ -223,6 +227,7 @@ tokener models list -o json
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: list path `rows`; columns `key`, `requests`, `inputTokens`, `outputTokens`, `cacheReadInputTokens`, `spendUsdMicro`; response media `application/json`
+- Search terms: `spend`, `cost`
 - Example:
 
 ```
@@ -239,6 +244,7 @@ tokener usage by-model --range 30 -o json
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: list path `points`; columns `day`, `requests`, `tokens`, `spendUsdMicro`; response media `application/json`
+- Search terms: `spend`, `cost`
 - Example:
 
 ```
@@ -255,6 +261,7 @@ tokener usage daily --range 30 -o json
 - Flags:
   - `--range` (query, default `7`, one of: 7|30): Usage window in days
 - Output: columns `summary.requests`, `summary.tokens`, `summary.spendUsdMicro`, `summary.inputTokens`, `summary.outputTokens`, `summary.cacheReadInputTokens`; response media `application/json`
+- Search terms: `spend`, `cost`
 - Example:
 
 ```

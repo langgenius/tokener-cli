@@ -15,6 +15,7 @@ commands:
     match:
       method: GET
       path: /api/v1/billing/balance
+    search_terms: [credit, credits]
     short: Show the available Tokener.ai credit balance
     long: |
       Shows the purchased, granted, and total available credits for the
@@ -57,6 +58,7 @@ commands:
     match:
       method: GET
       path: /api/v1/billing/ledger
+    search_terms: [credit, credits]
     short: List credit ledger activity
     long: |
       Lists the organization's append-only credit ledger. Use --all to follow
@@ -155,6 +157,8 @@ commands:
     match:
       method: POST
       path: /api/v1/keys
+    body:
+      flags: true
     short: Create an API key
     long: |
       Creates a Tokener.ai API key and returns its plaintext secret. Set simple
@@ -162,9 +166,9 @@ commands:
       --file. Treat the response as a credential. The plaintext secret appears
       only in the key field of structured output and via keys reveal.
     example: |
-      tokener keys create --set-str name=production -o json
+      tokener keys create --name production -o json
       tokener keys create \
-        --set-str name=production \
+        --name production \
         --set limits.maxBudgetUsd=100 \
         --set-str limits.budgetDuration=monthly \
         -o json
@@ -219,6 +223,7 @@ commands:
     match:
       method: POST
       path: /api/v1/keys/{id}/reveal
+    search_terms: [secret]
     short: Reveal an API key secret
     long: |
       Returns the plaintext secret for a key that has not been revoked. The
@@ -343,6 +348,7 @@ commands:
     match:
       method: GET
       path: /api/v1/usage/summary
+    search_terms: [spend, cost]
     short: Show usage totals
     long: |
       Shows total requests, tokens, cache activity, and billed spend for a
@@ -377,6 +383,7 @@ commands:
       path: /api/v1/usage/series
     use: daily
     aliases: [series]
+    search_terms: [spend, cost]
     short: Show daily usage
     long: |
       Shows one usage point per day with per-model segments for a 7- or 30-day
@@ -409,6 +416,7 @@ commands:
       path: /api/v1/usage/breakdown
     use: by-model
     aliases: [breakdown]
+    search_terms: [spend, cost]
     short: Show usage grouped by model
     long: |
       Aggregates requests, tokens, cache activity, and billed spend by model
