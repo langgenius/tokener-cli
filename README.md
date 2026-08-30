@@ -8,6 +8,10 @@ billing balance and ledger, usage, and the public model catalog.
 It is not the LLM data plane: model traffic goes to the Tokener Gateway with a
 Tokener.ai API key, not to this CLI.
 
+## Architecture
+
+[![Tokener CLI runtime architecture](docs/tokener-architecture.svg)](docs/tokener-architecture.svg)
+
 ## Install
 
 Install the latest release on macOS or Linux:

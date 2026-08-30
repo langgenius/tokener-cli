@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" data-blueprint-diagram="true" viewBox="0 0 1800 1100" role="img" aria-labelledby="title desc" text-rendering="geometricPrecision">
+  <title id="title">tokener-cli architecture</title>
+  <desc id="desc">The tokener binary combines a generated Console management client with a custom native agent launcher. Management requests terminate at the Tokener Console API, while native coding harnesses send model traffic directly through the Tokener Gateway. Build-time pipelines generate the management surface and embed a verified rx snapshot.</desc>
+  <defs>
+    <filter id="shadow" x="-15%" y="-20%" width="130%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#111827" flood-opacity="0.10"/></filter>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#173fff"/></marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#e55d2d"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#3e9954"/></marker>
+    <style>
+      .sans{font-family:"Inter","Helvetica Neue",Arial,sans-serif}.mono{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace}.ink{fill:#17191d}.muted{fill:#6b7078}.blue{fill:#173fff}.orange{fill:#d95429}.green{fill:#3e9954}.purple{fill:#7650bd}.kicker{font-family:"SFMono-Regular",Consolas,monospace;font-size:15px;font-weight:700;letter-spacing:2.5px}.title{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:44px;font-weight:800;letter-spacing:-1.2px}.subtitle{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:18px;font-weight:400}.lane-title{font-family:"SFMono-Regular",Consolas,monospace;font-size:15px;font-weight:700;letter-spacing:2px}.lane-number{font-family:"SFMono-Regular",Consolas,monospace;font-size:14px;font-weight:700}.card-title{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:23px;font-weight:700}.card-title-sm{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:19px;font-weight:700}.body{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:15px;font-weight:400}.body-sm{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:400}.code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:13px;font-weight:500}.code-sm{font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:12px;font-weight:500}.badge-main{font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:19px;font-weight:700}.badge-sub{font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;font-weight:700;letter-spacing:1.4px}.rail-title{font-family:"SFMono-Regular",Consolas,monospace;font-size:14px;font-weight:700;letter-spacing:2px}.rail-body{font-family:"SFMono-Regular",Consolas,monospace;font-size:14px;font-weight:500}.edge-label{font-family:"SFMono-Regular",Consolas,monospace;font-size:11px;font-weight:700}.line-blue{fill:none;stroke:#173fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.line-orange{fill:none;stroke:#e55d2d;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.line-green{fill:none;stroke:#3e9954;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.line-gray{fill:none;stroke:#aeb4be;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+
+  <rect width="1800" height="1100" fill="#fbfbfa"/>
+  <path d="M54 38H1746" stroke="#17191d" stroke-width="4" stroke-linecap="round"/>
+  <g class="sans">
+    <rect x="56" y="70" width="42" height="42" rx="9" fill="#173fff"/>
+    <path d="M67 83H87M77 73V103" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    <text x="116" y="102" class="kicker blue">TOKENER · RUNTIME ARCHITECTURE</text>
+    <text x="56" y="157" class="title ink">One binary. Two planes. No hidden proxy.</text>
+    <text x="56" y="190" class="subtitle muted">Console management ends at console.tokener.dev. Model traffic starts in native harnesses and goes to api.tokener.dev.</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1370" y="64" width="376" height="116" rx="16" fill="#fff" stroke="#d7dae0" stroke-width="2"/>
+    <path d="M1494 64V180M1618 64V180" stroke="#d7dae0" stroke-width="2"/>
+  </g>
+  <g class="sans">
+    <text x="1397" y="103" class="badge-main ink">Go</text><text x="1397" y="135" class="badge-sub muted">SINGLE BINARY</text>
+    <text x="1519" y="103" class="badge-main blue">Generated</text><text x="1519" y="135" class="badge-sub muted">CONSOLE CLI</text>
+    <text x="1643" y="103" class="badge-main green">Native</text><text x="1643" y="135" class="badge-sub muted">AGENT EXEC</text>
+  </g>
+
+  <rect x="54" y="226" width="1692" height="590" rx="18" fill="#fff" stroke="#d7dae0" stroke-width="2" filter="url(#shadow)"/>
+  <path d="M326 226V816M706 226V816M1356 226V816" stroke="#d7dae0" stroke-width="2"/>
+  <path d="M54 284H1746" stroke="#d7dae0" stroke-width="2"/>
+
+  <g class="sans">
+    <text x="78" y="262" class="lane-title blue">ENTRYPOINTS</text><text x="294" y="262" class="lane-number muted">01</text>
+    <text x="354" y="262" class="lane-title orange">COMMAND ASSEMBLY</text><text x="674" y="262" class="lane-number muted">02</text>
+    <text x="736" y="262" class="lane-title purple">RUNTIME PLANES</text><text x="1324" y="262" class="lane-number muted">03</text>
+    <text x="1386" y="262" class="lane-title green">SERVICE BOUNDARIES</text><text x="1714" y="262" class="lane-number muted">04</text>
+  </g>
+
+  <g class="sans">
+    <text x="78" y="320" class="card-title-sm ink">Management</text>
+    <text x="78" y="352" class="body muted">auth · identity</text>
+    <text x="78" y="378" class="body muted">keys · billing</text>
+    <text x="78" y="404" class="body muted">usage · models</text>
+    <path d="M78 430H298" stroke="#d7dae0" stroke-width="2"/>
+    <text x="78" y="470" class="card-title-sm ink">Native agents</text>
+    <text x="78" y="502" class="code blue">tokener agent &lt;harness&gt;</text>
+    <text x="78" y="530" class="body-sm muted">claude · codex · opencode</text>
+    <text x="78" y="553" class="body-sm muted">pi · dsh · kimi</text>
+    <path d="M78 580H298" stroke="#d7dae0" stroke-width="2"/>
+    <text x="78" y="620" class="card-title-sm ink">Built-in utilities</text>
+    <text x="78" y="652" class="code muted">commands · search</text>
+    <text x="78" y="680" class="code muted">skill · update</text>
+    <rect x="78" y="720" width="220" height="54" rx="9" fill="#eef2ff" stroke="#173fff" stroke-width="1.8"/>
+    <text x="96" y="753" class="code blue">table · json · yaml · raw</text>
+  </g>
+
+  <path d="M298 360H310V650H298" class="line-gray"/>
+  <path d="M310 498H352" class="line-blue" marker-end="url(#arrow-blue)"/>
+
+  <g class="sans" filter="url(#shadow)">
+    <rect x="352" y="316" width="308" height="88" rx="13" fill="#eef2ff" stroke="#173fff" stroke-width="2.5"/>
+    <text x="378" y="352" class="card-title ink">tokener</text>
+    <text x="378" y="379" class="code muted">cmd/tokener/main.go</text>
+
+    <rect x="382" y="438" width="248" height="70" rx="12" fill="#fff3ec" stroke="#e55d2d" stroke-width="2.3"/>
+    <text x="408" y="478" class="card-title-sm orange">Lathe.Run + Cobra</text>
+
+    <rect x="382" y="542" width="248" height="64" rx="12" fill="#fff" stroke="#aeb4be" stroke-width="2"/>
+    <text x="408" y="582" class="card-title-sm ink">mount(root)</text>
+
+    <rect x="348" y="648" width="150" height="104" rx="12" fill="#eef2ff" stroke="#173fff" stroke-width="2"/>
+    <text x="367" y="680" class="body-sm blue" font-weight="700">GENERATED</text>
+    <text x="367" y="708" class="code-sm ink">MountModules</text>
+    <text x="367" y="732" class="code-sm muted">BuildFlat</text>
+
+    <rect x="514" y="648" width="150" height="104" rx="12" fill="#eef8f0" stroke="#3e9954" stroke-width="2"/>
+    <text x="533" y="680" class="body-sm green" font-weight="700">CUSTOM</text>
+    <text x="533" y="708" class="code-sm ink">agent.NewCommand</text>
+    <text x="533" y="732" class="code-sm muted">native exec</text>
+  </g>
+  <path d="M506 404V438" class="line-blue" marker-end="url(#arrow-blue)"/>
+  <path d="M506 508V542" class="line-blue" marker-end="url(#arrow-blue)"/>
+  <path d="M506 606V628H423V648" class="line-blue" marker-end="url(#arrow-blue)"/>
+  <path d="M506 606V628H589V648" class="line-green" marker-end="url(#arrow-green)"/>
+
+  <rect x="736" y="310" width="590" height="210" rx="16" fill="#f4f6ff" stroke="#8ca0ff" stroke-width="2"/>
+  <text x="760" y="344" class="lane-title blue">CONSOLE MANAGEMENT PLANE</text>
+  <g class="sans" filter="url(#shadow)">
+    <rect x="762" y="370" width="220" height="116" rx="12" fill="#fff" stroke="#173fff" stroke-width="2"/>
+    <text x="784" y="402" class="card-title-sm ink">Generated commands</text>
+    <text x="784" y="430" class="code-sm muted">15 API operations</text>
+    <text x="784" y="454" class="code-sm muted">typed flags · output hints</text>
+    <text x="784" y="476" class="code-sm blue">internal/generated/console</text>
+
+    <rect x="1014" y="370" width="286" height="116" rx="12" fill="#f5f0fc" stroke="#7650bd" stroke-width="2"/>
+    <text x="1036" y="402" class="card-title-sm ink">Lathe auth + HTTP</text>
+    <text x="1036" y="430" class="code-sm muted">device login · PAT</text>
+    <text x="1036" y="454" class="code-sm muted">local host credentials</text>
+    <text x="1036" y="476" class="code-sm purple">TOKENER_HOST → Console</text>
+  </g>
+  <path d="M498 700H690V428H762" class="line-blue" marker-end="url(#arrow-blue)"/>
+  <path d="M982 428H1014" class="line-blue" marker-end="url(#arrow-blue)"/>
+
+  <rect x="736" y="546" width="590" height="240" rx="16" fill="#f1f9f3" stroke="#8bc99a" stroke-width="2"/>
+  <text x="760" y="580" class="lane-title green">NATIVE AGENT PLANE</text>
+  <g class="sans" filter="url(#shadow)">
+    <rect x="762" y="604" width="164" height="94" rx="12" fill="#fff" stroke="#3e9954" stroke-width="2"/>
+    <text x="782" y="636" class="card-title-sm ink">agent command</text>
+    <text x="782" y="663" class="code-sm muted">key · harness</text>
+    <text x="782" y="685" class="code-sm green">fixed profile</text>
+
+    <rect x="950" y="604" width="166" height="94" rx="12" fill="#fff" stroke="#3e9954" stroke-width="2"/>
+    <text x="970" y="636" class="card-title-sm ink">embedded rx</text>
+    <text x="970" y="663" class="code-sm muted">host protocol 1.0</text>
+    <text x="970" y="685" class="code-sm green">SHA-256 verified</text>
+
+    <rect x="1140" y="604" width="160" height="94" rx="12" fill="#fff" stroke="#3e9954" stroke-width="2"/>
+    <text x="1160" y="636" class="card-title-sm ink">native harness</text>
+    <text x="1160" y="663" class="code-sm muted">exec replacement</text>
+    <text x="1160" y="685" class="code-sm green">model client</text>
+  </g>
+  <path d="M664 700H716V651H762" class="line-green" marker-end="url(#arrow-green)"/>
+  <path d="M926 651H950" class="line-green" marker-end="url(#arrow-green)"/>
+  <path d="M1116 651H1140" class="line-green" marker-end="url(#arrow-green)"/>
+
+  <rect x="762" y="720" width="164" height="44" rx="8" fill="#f5f0fc" stroke="#7650bd" stroke-width="1.6"/>
+  <text x="780" y="747" class="code-sm purple">agent-key.json · 0600</text>
+  <rect x="950" y="720" width="166" height="44" rx="8" fill="#eef2ff" stroke="#8ca0ff" stroke-width="1.6"/>
+  <text x="968" y="747" class="code-sm blue">engine cache / &lt;sha&gt;</text>
+  <rect x="1140" y="720" width="160" height="44" rx="8" fill="#fff3ec" stroke="#e55d2d" stroke-width="1.6"/>
+  <text x="1158" y="747" class="code-sm orange">TOKENER_API_KEY</text>
+
+  <g class="sans" filter="url(#shadow)">
+    <rect x="1386" y="316" width="328" height="184" rx="14" fill="#eef2ff" stroke="#173fff" stroke-width="2.5"/>
+    <text x="1412" y="353" class="lane-title blue">TOKENER CONSOLE</text>
+    <text x="1412" y="389" class="card-title ink">console.tokener.dev</text>
+    <text x="1412" y="421" class="code muted">/api/v1/*</text>
+    <text x="1412" y="452" class="body muted">identity · keys · billing</text>
+    <text x="1412" y="477" class="body muted">usage · public model catalog</text>
+
+    <rect x="1386" y="566" width="328" height="198" rx="14" fill="#eef8f0" stroke="#3e9954" stroke-width="2.5"/>
+    <text x="1412" y="603" class="lane-title green">TOKENER GATEWAY</text>
+    <text x="1412" y="639" class="card-title ink">api.tokener.dev/v1</text>
+    <text x="1412" y="671" class="body muted">native harness model requests</text>
+    <text x="1412" y="697" class="body muted">provider routing and execution</text>
+    <rect x="1412" y="718" width="274" height="28" rx="6" fill="#dff3e4"/>
+    <text x="1427" y="737" class="code-sm green">not the Console management API</text>
+  </g>
+  <path d="M1300 428H1386" class="line-blue" marker-end="url(#arrow-blue)"/>
+  <text x="1323" y="416" class="edge-label blue">HTTPS</text>
+  <path d="M1300 651H1386" class="line-green" marker-end="url(#arrow-green)"/>
+  <text x="1343" y="629" text-anchor="middle" class="edge-label green">MODEL</text>
+  <text x="1343" y="642" text-anchor="middle" class="edge-label green">TRAFFIC</text>
+  <path d="M844 604V538H1338V474H1386" class="line-orange" stroke-dasharray="7 6" marker-end="url(#arrow-orange)"/>
+  <text x="1073" y="528" class="edge-label orange">AGENT KEY CREATE · POST /api/v1/keys</text>
+
+  <rect x="54" y="844" width="1692" height="204" rx="18" fill="#111315" filter="url(#shadow)"/>
+  <path d="M660 844V1048M1238 844V1048" stroke="#34383d" stroke-width="2"/>
+  <g>
+    <text x="82" y="883" class="rail-title" fill="#8f949c">GENERATED MANAGEMENT SURFACE</text>
+    <text x="82" y="921" class="rail-body" fill="#f2f3f5">ai-gateway OpenAPI @ f54dd7c…</text>
+    <text x="82" y="951" class="rail-body" fill="#f2f3f5">→ specsync → overlays/console.yaml</text>
+    <text x="82" y="981" class="rail-body" fill="#8da4ff">→ Lathe v0.6.1 → generated specs + Skill</text>
+    <text x="82" y="1017" class="code-sm" fill="#777c84">human edits inputs · never internal/generated</text>
+
+    <text x="690" y="883" class="rail-title" fill="#8f949c">EMBEDDED AGENT ENGINE</text>
+    <text x="690" y="921" class="rail-body" fill="#f2f3f5">Recall/rx v0.5.7 @ f02da0a…</text>
+    <text x="690" y="951" class="rail-body" fill="#f2f3f5">→ four native builds → host probe 1.0</text>
+    <text x="690" y="981" class="rail-body" fill="#85d096">→ provenance + SHA lock → Go embed</text>
+    <text x="690" y="1017" class="code-sm" fill="#777c84">TOKENER_RX allowed only after capability handshake</text>
+
+    <text x="1268" y="883" class="rail-title" fill="#8f949c">RELEASE PATH</text>
+    <text x="1268" y="921" class="rail-body" fill="#f2f3f5">tag v* → make ci-check</text>
+    <text x="1268" y="951" class="rail-body" fill="#f2f3f5">→ GoReleaser → GitHub Releases</text>
+    <text x="1268" y="981" class="rail-body" fill="#f1a17f">→ Homebrew formula pull request</text>
+    <text x="1268" y="1017" class="code-sm" fill="#777c84">darwin · linux · windows</text>
+  </g>
+
+  <text x="900" y="1082" text-anchor="middle" class="subtitle ink">The CLI manages accounts. The launched harness carries model traffic.</text>
+</svg>
