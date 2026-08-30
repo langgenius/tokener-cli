@@ -99,7 +99,7 @@ var Specs = []runtime.CommandSpec{
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "create",
 		Short:           "Create an API key",
-		Long:            "Creates a Tokener.ai API key and returns its plaintext secret. Set simple\nbody fields with --set or --set-str, or pass a complete JSON body with\n--file. Treat the response as a credential. The plaintext secret appears\nonly in the key field of structured output and via keys reveal.\n",
+		Long:            "Creates a Tokener.ai API key and returns its plaintext secret. The name\nis optional: the server generates one when it is omitted. Set simple\nbody fields with --set or --set-str, or pass a complete JSON body with\n--file. Treat the response as a credential. The plaintext secret appears\nonly in the key field of structured output and via keys reveal.\n",
 		Example:         "tokener keys create --name production -o json\ntokener keys create \\\n  --name production \\\n  --set limits.maxBudgetUsd=100 \\\n  --set-str limits.budgetDuration=monthly \\\n  -o json\n",
 		OperationID:     "create",
 		Method:          "POST",
