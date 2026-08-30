@@ -61,17 +61,45 @@ func newCommand(deps dependencies) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                "agent [harness] [args...]",
 		Short:              "Run coding agents through the Tokener Gateway",
+		Long:               agentLong(),
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
+		SilenceUsage:       true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 1 && (args[0] == "-h" || args[0] == "--help") {
 				return cmd.Help()
 			}
+			if len(args) == 0 {
+				return missingHarness(cmd, deps)
+			}
 			return visibleError(runAgent(cmd.Context(), deps, args))
 		},
 	}
+	cmd.SetIn(deps.stdin)
+	cmd.SetOut(deps.stdout)
+	cmd.SetErr(deps.stderr)
 	cmd.AddCommand(newKeyCommand(deps))
 	return cmd
+}
+
+func agentLong() string {
+	return "Run coding agents through the Tokener Gateway.\n\nAvailable harnesses: " + strings.Join(harnesses, ", ")
+}
+
+func missingHarness(cmd *cobra.Command, deps dependencies) error {
+	if err := cmd.Usage(); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(deps.stderr, "\nAvailable harnesses: %s\n", strings.Join(harnesses, ", ")); err != nil {
+		return err
+	}
+	return runtime.NewError(
+		runtime.CodeUsage,
+		runtime.ExitUsage,
+		"harness is required",
+		"run `tokener agent --help`",
+		fmt.Errorf("available harnesses: %s", strings.Join(harnesses, ", ")),
+	)
 }
 
 func newKeyCommand(deps dependencies) *cobra.Command {
@@ -99,7 +127,36 @@ func newKeyCommand(deps dependencies) *cobra.Command {
 			return visibleError(regenerateKey(cmd.Context(), deps))
 		},
 	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "status",
+		Short: "Show the local Tokener agent key binding",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return visibleError(statusKey(deps))
+		},
+	})
 	return cmd
+}
+
+func statusKey(deps dependencies) error {
+	key, exists, err := deps.bindings.Load()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		_, err = fmt.Fprintf(deps.stdout, "bound: false\nhost: %s\n", managementHostname)
+		return err
+	}
+	_, err = fmt.Fprintf(deps.stdout, "bound: true\nprefix: %s\nhost: %s\n", keyPrefix(key), managementHostname)
+	return err
+}
+
+func keyPrefix(key string) string {
+	const visible = 8
+	if len(key) <= visible {
+		return key
+	}
+	return key[:visible]
 }
 
 func loginKey(ctx context.Context, deps dependencies) error {
@@ -150,7 +207,13 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 		harness = args[0]
 		nativeArgs = args[1:]
 		if !knownHarness(harness) {
-			return fmt.Errorf("unknown harness %q; expected one of: %s", harness, strings.Join(harnesses, ", "))
+			return runtime.NewError(
+				runtime.CodeUsage,
+				runtime.ExitUsage,
+				fmt.Sprintf("unknown harness %q; expected one of: %s", harness, strings.Join(harnesses, ", ")),
+				"run `tokener agent --help`",
+				nil,
+			)
 		}
 	}
 	enginePath, err := deps.engine.Resolve(ctx, harness)
