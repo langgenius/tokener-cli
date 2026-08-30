@@ -5,7 +5,7 @@ go 1.25.13
 require (
 	github.com/lathe-cli/kitup/go v0.1.3
 	github.com/lathe-cli/kitup/go-cobra v0.1.3
-	github.com/lathe-cli/lathe v0.6.1-0.20260830064000-7ec8e13fa7a6
+	github.com/lathe-cli/lathe v0.6.1-0.20260830112720-4677bfad03fb
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
