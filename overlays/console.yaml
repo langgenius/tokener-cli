@@ -104,11 +104,18 @@ commands:
       column_labels:
         createdAt: TIME
         status: STATUS
-        amountCents: "PAID (CENTS)"
+        amountCents: PAID
         creditAmountUsdMicro: CREDIT
         currency: CURRENCY
         id: ID
       column_formats:
+        amountCents:
+          kind: currency
+          currency: USD
+          source_scale: 2
+          grouping: true
+          min_fraction_digits: 2
+          max_fraction_digits: 2
         creditAmountUsdMicro:
           kind: currency
           currency: USD
