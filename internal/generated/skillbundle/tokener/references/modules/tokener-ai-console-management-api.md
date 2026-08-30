@@ -68,6 +68,8 @@ tokener billing purchases --all -o json
 - HTTP: `GET /api/v1/whoami`
 - Auth: required
 - Body: none
+- Shortcuts:
+  - `tokener whoami`
 - Flags: none
 - Output: columns `email`, `emailVerified`, `tokenName`, `organizationId`, `userId`; response media `application/json`
 - Example:
@@ -86,7 +88,7 @@ tokener identity whoami -o json
 - Auth: required
 - Body: required; media type `application/json`
 - Flags: none
-- Output: response media `application/json`
+- Output: columns `record.name`, `record.prefix`, `record.status`, `record.id`, `record.createdAt`; response media `application/json`
 - Example:
 
 ```
@@ -105,7 +107,7 @@ tokener keys create \
 - Auth: required
 - Body: none
 - Flags: none
-- Output: list path `keys`; columns `name`, `status`, `prefix`, `spend30d`, `lastUsedAt`, `id`; response media `application/json`
+- Output: list path `keys`; columns `name`, `status`, `prefix`, `spend30d`, `limits.maxBudgetUsdMicro`, `lastUsedAt`, `id`; response media `application/json`
 - Example:
 
 ```
@@ -129,6 +131,8 @@ tokener keys list -o json
   - `--rpm-limit` (body): rpmLimit
   - `--tpm-limit` (body): tpmLimit
 - Output: response media `application/json`
+- Notes:
+  - This is a full replacement: omitted fields are cleared.
 - Example:
 
 ```
@@ -137,6 +141,10 @@ tokener keys replace-limits <key-id> \
   --max-budget-usd 100 \
   --budget-duration monthly \
   --rpm-limit 60 \
+  --tpm-limit 100000 \
+  --max-parallel-requests 4 \
+  --expires-at 2027-01-01T00:00:00Z \
+  --allowed-models gpt-5 \
   -o json
 ```
 
@@ -149,6 +157,10 @@ tokener keys replace-limits <key-id> \
 - Flags:
   - argument 1 `[key-id]` or `--id` (path, required): API key ID
 - Output: response media `application/json`
+- Notes:
+  - The output is a credential. Do not write it to logs or shell history.
+- Known errors:
+  - HTTP 400: The key is already revoked.
 - Example: `tokener keys reveal <key-id> -o json`
 
 ### `tokener keys revoke`
@@ -160,6 +172,8 @@ tokener keys replace-limits <key-id> \
 - Flags:
   - argument 1 `[key-id]` or `--id` (path, required): API key ID
 - Output: response media `application/json`
+- Known errors:
+  - HTTP 400: The key is already revoked.
 - Example: `tokener keys revoke <key-id> -o json`
 
 ### `tokener keys set-status`
@@ -172,6 +186,8 @@ tokener keys replace-limits <key-id> \
   - argument 1 `[key-id]` or `--id` (path, required): API key ID
   - `--status` (body, required, one of: active|disabled): status
 - Output: response media `application/json`
+- Known errors:
+  - HTTP 400: The key is already revoked.
 - Example:
 
 ```

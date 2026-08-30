@@ -9,7 +9,7 @@ cli-sync:
 	go mod tidy
 
 cli-build:
-	go build -o bin/tokener ./cmd/tokener
+	go build -ldflags "-X github.com/lathe-cli/lathe/pkg/lathe.Version=$$(git describe --tags --always 2>/dev/null || echo dev)" -o bin/tokener ./cmd/tokener
 
 cli-install: cli-build
 	mkdir -p "$(INSTALL_DIR)"

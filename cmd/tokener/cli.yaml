@@ -13,6 +13,7 @@ auth:
 skill:
   root: skills
   bundle: true
+  include: internal/skill-include
 
 update:
   github:

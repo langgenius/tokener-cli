@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/lathe-cli/lathe/pkg/lathe"
@@ -25,7 +26,20 @@ func main() {
 	os.Exit(lathe.Run(lathe.RunOptions{
 		Manifest: manifestBytes,
 		Mount:    mount,
+		Version:  moduleVersion(),
 	}))
+}
+
+func moduleVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	version := strings.TrimSpace(info.Main.Version)
+	if version == "" || version == "(devel)" {
+		return ""
+	}
+	return version
 }
 
 func mount(root *cobra.Command) error {

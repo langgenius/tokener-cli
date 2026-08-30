@@ -106,18 +106,30 @@ func TestAgentLaunchUsesBoundKeyFixedGatewayAndNativeArguments(t *testing.T) {
 	}
 }
 
-func TestAgentWithoutHarnessLeavesHostedRequestHarnessEmpty(t *testing.T) {
-	t.Setenv(credentialEnv, "")
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+func TestAgentWithoutHarnessPrintsUsageAndHarnesses(t *testing.T) {
 	engine := &fakeEngine{path: "/engine/rx"}
 	binding := &fakeBinding{key: "bound-key", exists: true}
-	deps, call, _ := testDependencies(engine, binding)
+	deps, call, created := testDependencies(engine, binding)
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	deps.stdout = stdout
+	deps.stderr = stderr
 
-	if err := executeAgent(t, deps); err != nil {
-		t.Fatal(err)
+	err := executeAgent(t, deps)
+	if err == nil {
+		t.Fatal("expected harness error")
 	}
-	if !slices.Equal(engine.calls, []string{""}) || call.request.Harness != "" {
-		t.Fatalf("engine calls/request harness = %v/%q", engine.calls, call.request.Harness)
+	if *created != 0 || call.path != "" || len(engine.calls) != 0 {
+		t.Fatalf("created/launch/engine = %d/%q/%v", *created, call.path, engine.calls)
+	}
+	output := stdout.String() + stderr.String() + err.Error()
+	for _, harness := range harnesses {
+		if !strings.Contains(output, harness) {
+			t.Fatalf("missing harness %q in %q", harness, output)
+		}
+	}
+	if strings.Contains(strings.ToLower(output), "rx") {
+		t.Fatalf("leaked rx in %q", output)
 	}
 }
 
@@ -170,7 +182,39 @@ func TestOverrideFailurePrecedesKeyHandling(t *testing.T) {
 	}
 }
 
-func TestKeySubcommandsAreOnlyLoginAndRegenerate(t *testing.T) {
+func TestKeyStatusReportsUnboundAndBoundPrefix(t *testing.T) {
+	engine := &fakeEngine{path: "/engine/rx"}
+	binding := &fakeBinding{}
+	deps, call, created := testDependencies(engine, binding)
+	stdout := &bytes.Buffer{}
+	deps.stdout = stdout
+
+	if err := executeAgent(t, deps, "key", "status"); err != nil {
+		t.Fatal(err)
+	}
+	if *created != 0 || call.path != "" {
+		t.Fatalf("status created/launch = %d/%q", *created, call.path)
+	}
+	if !strings.Contains(stdout.String(), "bound: false") {
+		t.Fatalf("unbound output = %q", stdout.String())
+	}
+
+	binding.key = "sk-abcdefghijklmnopqrstuvwxyz"
+	binding.exists = true
+	stdout.Reset()
+	if err := executeAgent(t, deps, "key", "status"); err != nil {
+		t.Fatal(err)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "bound: true") || !strings.Contains(out, "sk-abcde") {
+		t.Fatalf("bound output = %q", out)
+	}
+	if strings.Contains(out, binding.key) {
+		t.Fatalf("full key leaked: %q", out)
+	}
+}
+
+func TestKeySubcommandsAreLoginRegenerateAndStatus(t *testing.T) {
 	engine := &fakeEngine{path: "/engine/rx"}
 	binding := &fakeBinding{key: "bound-key", exists: true}
 	deps, _, created := testDependencies(engine, binding)
@@ -183,7 +227,7 @@ func TestKeySubcommandsAreOnlyLoginAndRegenerate(t *testing.T) {
 	for _, child := range keyCommand.Commands() {
 		names = append(names, child.Name())
 	}
-	if !slices.Equal(names, []string{"login", "regenerate"}) {
+	if !slices.Equal(names, []string{"login", "regenerate", "status"}) {
 		t.Fatalf("key commands = %v", names)
 	}
 
