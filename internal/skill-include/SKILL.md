@@ -2,7 +2,8 @@
 
 `tokener search` only indexes generated API commands. It does not find auth, agent, skill, update, or completion. If search returns no candidates, read `references/modules/` and this section.
 
-- `tokener auth login --with-token`: authenticate with a personal access token whose value starts with `tkr_pat_`.
+- `tokener auth login`: use this exact command for Tokener browser device approval; no hostname or provider flag is needed. Use `--no-browser` to print the verification URL and code without opening a browser. Tokener stores the resulting personal access token and does not use OAuth access or refresh tokens.
+- `tokener auth login --with-token`: authenticate from stdin with an existing personal access token whose value starts with `tkr_pat_`.
 - `tokener auth status` and `tokener auth use <host>`: inspect or select the management host.
 - `tokener agent <harness>`: launch a coding agent through the Tokener Gateway. Available harnesses: claude, codex, opencode, pi, dsh, kimi.
 - `tokener agent key login` and `tokener agent key status`: bind or inspect the local agent key. Status is local-only and does not create or rotate a key.

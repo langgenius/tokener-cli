@@ -5,9 +5,9 @@
 - Backend: `openapi3`
 - Default hostname: `console.tokener.dev`
 - Repository: https://github.com/langgenius/ai-gateway.git
-- Pinned tag: `v0.0.2-beta3`
+- Pinned tag: `f54dd7c9c9106b6436c266a33b4344c90dad06e7`
 - Files: `apps/console/openapi/v1.yaml`
-- Resolved SHA: `780454479bdd398f3ade7f96d07c535b4095722d`
+- Resolved SHA: `f54dd7c9c9106b6436c266a33b4344c90dad06e7`
 
 ## billing
 

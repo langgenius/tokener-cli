@@ -21,7 +21,7 @@ func createAgentKey(ctx context.Context) (string, error) {
 	}
 	entry, exists := hosts.Get(managementHostname)
 	if !exists || !hasCredential(entry) {
-		return "", errors.New("Tokener management login is required; run `tokener auth login --with-token`")
+		return "", errors.New("Tokener management login is required; run `tokener auth login`")
 	}
 	auth, err := runtime.NewAuthFromHost(entry)
 	if err != nil {

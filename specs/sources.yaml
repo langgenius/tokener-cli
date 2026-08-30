@@ -3,7 +3,7 @@ sources:
     display_name: Tokener.ai Console Management API
     default_hostname: console.tokener.dev
     repo_url: https://github.com/langgenius/ai-gateway.git
-    pinned_tag: v0.0.2-beta3
+    pinned_tag: f54dd7c9c9106b6436c266a33b4344c90dad06e7
     backend: openapi3
     openapi3:
       files: [apps/console/openapi/v1.yaml]

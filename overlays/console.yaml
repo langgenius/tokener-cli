@@ -437,6 +437,18 @@ commands:
       range:
         help: Usage window in days (7 or 30)
 
+  start-device-login:
+    match:
+      method: POST
+      path: /api/device-login/start
+    ignore: true
+
+  poll-device-login:
+    match:
+      method: POST
+      path: /api/device-login/token
+    ignore: true
+
   provision-partner-organization:
     match:
       method: POST

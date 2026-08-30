@@ -63,3 +63,4 @@ On a non-zero exit with JSON or YAML output, read `error.code`, `error.message`,
 ## Auth
 
 If command detail returns `auth.required=true`, run `tokener auth status -o json` before execution and read `hostname` and `source`. Host resolution order: `--hostname` > `$TOKENER_HOST` > the selected host (`tokener auth use <host>`) > `http.default_hostname` > the single host in `hosts.yml`. When more than one host is logged in and the host was chosen implicitly, the CLI also prints a `current host: <name>` line on stderr; read provenance from `auth status`, not from that line. If no matching host is logged in, stop and ask the user to authenticate.
+For browser-based OAuth login, run `tokener auth login --device-auth --hostname <host> --provider <provider>`. The browser opens by default in an interactive terminal; use `--no-browser` for manual login. `auth_type: bearer` in `hosts.yml` is expected after login because API requests use the issued bearer token.
