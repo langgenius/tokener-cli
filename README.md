@@ -60,6 +60,8 @@ then re-run `make cli-sync` and commit the regenerated output with the change.
 ## Usage
 
 ```sh
+bin/tokener auth login
+bin/tokener auth login --no-browser
 bin/tokener auth login --with-token
 bin/tokener commands --json
 bin/tokener commands show keys create --json

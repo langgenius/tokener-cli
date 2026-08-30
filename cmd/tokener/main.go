@@ -76,6 +76,17 @@ func configureAuthLogin(root *cobra.Command) error {
 				return fmt.Errorf("configure auth login hostname: %w", err)
 			}
 		}
+		if cmd.Flags().Changed("with-token") && !cmd.Flags().Changed("auth-type") {
+			tokenLogin, err := cmd.Flags().GetBool("with-token")
+			if err != nil {
+				return fmt.Errorf("read token login mode: %w", err)
+			}
+			if tokenLogin {
+				if err := cmd.Flags().Set("auth-type", "bearer"); err != nil {
+					return fmt.Errorf("configure token login auth type: %w", err)
+				}
+			}
+		}
 		if previous != nil {
 			return previous(cmd, args)
 		}

@@ -7,16 +7,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestConfigureAuthLoginHostnamePrecedence(t *testing.T) {
+func TestConfigureAuthLoginDefaults(t *testing.T) {
 	tests := []struct {
-		name     string
-		env      string
-		explicit string
-		want     string
+		name         string
+		env          string
+		explicitHost string
+		withToken    bool
+		withoutToken bool
+		authType     string
+		wantHost     string
+		wantAuthType string
 	}{
-		{name: "default", want: managementHostname},
-		{name: "environment", env: "env.tokener.test", want: "env.tokener.test"},
-		{name: "explicit", env: "env.tokener.test", explicit: "flag.tokener.test", want: "flag.tokener.test"},
+		{name: "default", wantHost: managementHostname, wantAuthType: "oauth"},
+		{name: "environment", env: "env.tokener.test", wantHost: "env.tokener.test", wantAuthType: "oauth"},
+		{name: "explicit host", env: "env.tokener.test", explicitHost: "flag.tokener.test", wantHost: "flag.tokener.test", wantAuthType: "oauth"},
+		{name: "implicit token type", withToken: true, wantHost: managementHostname, wantAuthType: "bearer"},
+		{name: "explicit token type", withToken: true, authType: "oauth", wantHost: managementHostname, wantAuthType: "oauth"},
+		{name: "disabled token mode", withoutToken: true, wantHost: managementHostname, wantAuthType: "oauth"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -25,14 +32,17 @@ func TestConfigureAuthLoginHostnamePrecedence(t *testing.T) {
 			root.SetOut(io.Discard)
 			root.SetErr(io.Discard)
 			root.PersistentFlags().String("hostname", "", "")
-			var got string
+			var gotHost, gotAuthType string
 			login := &cobra.Command{
 				Use: "login",
 				RunE: func(cmd *cobra.Command, _ []string) error {
-					got, _ = cmd.Root().PersistentFlags().GetString("hostname")
+					gotHost, _ = cmd.Root().PersistentFlags().GetString("hostname")
+					gotAuthType, _ = cmd.Flags().GetString("auth-type")
 					return nil
 				},
 			}
+			login.Flags().String("auth-type", "oauth", "")
+			login.Flags().Bool("with-token", false, "")
 			auth := &cobra.Command{Use: "auth"}
 			auth.AddCommand(login)
 			root.AddCommand(auth)
@@ -40,15 +50,27 @@ func TestConfigureAuthLoginHostnamePrecedence(t *testing.T) {
 				t.Fatal(err)
 			}
 			args := []string{"auth", "login"}
-			if test.explicit != "" {
-				args = append(args, "--hostname", test.explicit)
+			if test.explicitHost != "" {
+				args = append(args, "--hostname", test.explicitHost)
+			}
+			if test.withToken {
+				args = append(args, "--with-token")
+			}
+			if test.withoutToken {
+				args = append(args, "--with-token=false")
+			}
+			if test.authType != "" {
+				args = append(args, "--auth-type", test.authType)
 			}
 			root.SetArgs(args)
 			if err := root.Execute(); err != nil {
 				t.Fatal(err)
 			}
-			if got != test.want {
-				t.Fatalf("hostname = %q, want %q", got, test.want)
+			if gotHost != test.wantHost {
+				t.Fatalf("hostname = %q, want %q", gotHost, test.wantHost)
+			}
+			if gotAuthType != test.wantAuthType {
+				t.Fatalf("auth type = %q, want %q", gotAuthType, test.wantAuthType)
 			}
 		})
 	}

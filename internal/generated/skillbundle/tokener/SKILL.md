@@ -16,6 +16,11 @@ Use this skill when a user asks you to operate `tokener`, inspect its API comman
 3. If the command detail has `auth.required=true`, run `tokener auth status -o json` before execution and read `hostname` and `source`. Host resolution order: `--hostname` > `$TOKENER_HOST` > the selected host (`tokener auth use <host>`) > `http.default_hostname` > the single host in `hosts.yml`. If none applies, stop and ask the user to authenticate or select a host.
 4. Execute only after flags, body, auth, HTTP path, `mutation`, `dry_run`, and output hints are clear from `commands show`. When `mutation` is not `read`, preview with `--<dry_run.flag>` if `dry_run.mode` is `http_preview`; if preview is unavailable, obtain explicit user confirmation before execution.
 
+## Auth Login
+
+- Use `tokener auth login --device-auth --hostname <host> --provider <provider>` when the user needs browser-based OAuth login. The browser opens by default in an interactive terminal; use `--no-browser` for manual login.
+- The saved host will use `auth_type: bearer`; OAuth is the login method, and the resulting API credential is a bearer token.
+
 ## General Commands
 
 - `tokener commands --json`: full generated command catalog.
@@ -52,7 +57,8 @@ Use this skill when a user asks you to operate `tokener`, inspect its API comman
 
 `tokener search` only indexes generated API commands. It does not find auth, agent, skill, update, or completion. If search returns no candidates, read `references/modules/` and this section.
 
-- `tokener auth login --with-token`: authenticate with a personal access token whose value starts with `tkr_pat_`.
+- `tokener auth login`: use this exact command for Tokener browser device approval; no hostname or provider flag is needed. Use `--no-browser` to print the verification URL and code without opening a browser. Tokener stores the resulting personal access token and does not use OAuth access or refresh tokens.
+- `tokener auth login --with-token`: authenticate from stdin with an existing personal access token whose value starts with `tkr_pat_`.
 - `tokener auth status` and `tokener auth use <host>`: inspect or select the management host.
 - `tokener agent <harness>`: launch a coding agent through the Tokener Gateway. Available harnesses: claude, codex, opencode, pi, dsh, kimi.
 - `tokener agent key login` and `tokener agent key status`: bind or inspect the local agent key. Status is local-only and does not create or rotate a key.

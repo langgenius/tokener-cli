@@ -3,6 +3,15 @@ cli:
   short: "Command-line tool for the Tokener.ai console management API"
 
 auth:
+  default_type: oauth
+  login:
+    type: oauth_device
+    start_path: /api/device-login/start
+    token_path: /api/device-login/token
+    start_request:
+      device_label: Tokener CLI
+    poll_request:
+      device_code: ${device_code}
   validate:
     method: GET
     path: /api/v1/whoami
