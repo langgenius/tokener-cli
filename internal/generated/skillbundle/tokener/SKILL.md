@@ -60,7 +60,7 @@ Use this skill when a user asks you to operate `tokener`, inspect its API comman
 - `tokener auth login`: use this exact command for Tokener browser device approval; no hostname or provider flag is needed. Use `--no-browser` to print the verification URL and code without opening a browser. Tokener stores the resulting personal access token and does not use OAuth access or refresh tokens.
 - `tokener auth login --with-token`: authenticate from stdin with an existing personal access token whose value starts with `tkr_pat_`.
 - `tokener auth status` and `tokener auth use <host>`: inspect or select the management host.
-- `tokener agent <harness>`: launch a coding agent through the Tokener Gateway. Available harnesses: claude, codex, opencode, pi, dsh, kimi.
+- `tokener agent [<harness>]`: launch a coding agent through the Tokener Gateway. Omit the harness in an interactive terminal to choose from the picker; scripts must pass one. Available harnesses: claude, codex, opencode, pi, dsh, kimi.
 - `tokener agent key login` and `tokener agent key status`: bind or inspect the local agent key. Status is local-only and does not create or rotate a key.
 - `tokener skill install`: install this skill into local agent hosts. Preview with `--dry-run` before `--yes`.
 - `tokener update`: install a newer GitHub Release of this CLI. Do not pass `--yes` unless the user explicitly asked to replace the binary.
