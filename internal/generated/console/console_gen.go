@@ -241,7 +241,7 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/models",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"id", "name", "provider", "context", "inputPer1m", "outputPer1m"}, ColumnLabels: map[string]string{"context": "CONTEXT", "id": "MODEL", "inputPer1m": "INPUT / 1M", "name": "NAME", "outputPer1m": "OUTPUT / 1M", "provider": "PROVIDER"}, ResponseMediaType: "application/json"},
+		Output:          runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"id", "name", "provider", "context", "inputPer1m", "cachePer1m", "outputPer1m"}, ColumnLabels: map[string]string{"cachePer1m": "CACHE / 1M", "context": "CONTEXT", "id": "MODEL", "inputPer1m": "INPUT / 1M", "name": "NAME", "outputPer1m": "OUTPUT / 1M", "provider": "PROVIDER"}, ResponseMediaType: "application/json"},
 		Security:        &runtime.SecurityHint{},
 	},
 	{
