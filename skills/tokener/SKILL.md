@@ -68,6 +68,6 @@ Use this skill when a user asks you to operate `tokener`, inspect its API comman
 
 ### Write-path notes
 
-- `tokener keys create`: set the name with `--name <name>`; the name is optional and the server generates one when omitted. Nested limits fields have no typed flags; set them with `--set`, for example `--set limits.maxBudgetUsd=100`. The plaintext secret appears only in the `key` field of structured output and in `tokener keys reveal`.
+- `tokener keys create`: set the name with `--name <name>`; the name is optional and the server generates one when omitted. Nested limits fields have no typed flags; set exact decimal budgets with `--set-str`, for example `--set-str limits.maxBudgetUsd=100`. The plaintext secret appears only in the `key` field of structured output and in `tokener keys reveal`.
 - `tokener keys replace-limits` is a full replacement: omitted fields are cleared.
 - Treat `keys create` and `keys reveal` output as credentials. Do not write them to logs or shell history.

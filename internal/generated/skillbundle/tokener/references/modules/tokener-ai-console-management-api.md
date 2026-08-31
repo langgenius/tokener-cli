@@ -5,9 +5,9 @@
 - Backend: `openapi3`
 - Default hostname: `console.tokener.dev`
 - Repository: https://github.com/langgenius/ai-gateway.git
-- Pinned tag: `f54dd7c9c9106b6436c266a33b4344c90dad06e7`
+- Pinned tag: `101069be5d59fc9d03c0a54f24e7a42f640a4660`
 - Files: `apps/console/openapi/v1.yaml`
-- Resolved SHA: `f54dd7c9c9106b6436c266a33b4344c90dad06e7`
+- Resolved SHA: `101069be5d59fc9d03c0a54f24e7a42f640a4660`
 
 ## billing
 
@@ -98,7 +98,7 @@ tokener identity whoami -o json
 tokener keys create --name production -o json
 tokener keys create \
   --name production \
-  --set limits.maxBudgetUsd=100 \
+  --set-str limits.maxBudgetUsd=100 \
   --set-str limits.budgetDuration=monthly \
   -o json
 ```
@@ -129,7 +129,7 @@ tokener keys list -o json
   - `--allowed-models` (body): allowedModels
   - `--budget-duration` (body, one of: daily|weekly|monthly): budgetDuration
   - `--expires-at` (body, date-time): expiresAt
-  - `--max-budget-usd` (body): maxBudgetUsd
+  - `--max-budget-usd` (body): USD decimal string from 0 to 2000000000 with at most 6 fractional digits.
   - `--max-parallel-requests` (body): maxParallelRequests
   - `--rpm-limit` (body): rpmLimit
   - `--tpm-limit` (body): tpmLimit
