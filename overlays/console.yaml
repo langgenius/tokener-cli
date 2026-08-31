@@ -170,7 +170,7 @@ commands:
       tokener keys create --name production -o json
       tokener keys create \
         --name production \
-        --set limits.maxBudgetUsd=100 \
+        --set-str limits.maxBudgetUsd=100 \
         --set-str limits.budgetDuration=monthly \
         -o json
     output:
