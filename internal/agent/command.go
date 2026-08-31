@@ -69,7 +69,7 @@ func newCommand(deps dependencies) *cobra.Command {
 			if len(args) == 1 && (args[0] == "-h" || args[0] == "--help") {
 				return cmd.Help()
 			}
-			if len(args) == 0 {
+			if len(args) == 0 && !deps.interactive() {
 				return missingHarness(cmd, deps)
 			}
 			return visibleError(runAgent(cmd.Context(), deps, args))

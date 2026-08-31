@@ -106,7 +106,24 @@ func TestAgentLaunchUsesBoundKeyFixedGatewayAndNativeArguments(t *testing.T) {
 	}
 }
 
-func TestAgentWithoutHarnessPrintsUsageAndHarnesses(t *testing.T) {
+func TestAgentWithoutHarnessLaunchesPickerWhenInteractive(t *testing.T) {
+	engine := &fakeEngine{path: "/engine/rx"}
+	binding := &fakeBinding{key: "bound-key", exists: true}
+	deps, call, created := testDependencies(engine, binding)
+	deps.interactive = func() bool { return true }
+
+	if err := executeAgent(t, deps); err != nil {
+		t.Fatal(err)
+	}
+	if *created != 0 || !slices.Equal(engine.calls, []string{""}) {
+		t.Fatalf("created/engine = %d/%v", *created, engine.calls)
+	}
+	if call.path != "/engine/rx" || call.key != "bound-key" || call.request.Harness != "" || len(call.args) != 0 {
+		t.Fatalf("launch = %#v", call)
+	}
+}
+
+func TestAgentWithoutHarnessPrintsUsageAndHarnessesWhenNoninteractive(t *testing.T) {
 	engine := &fakeEngine{path: "/engine/rx"}
 	binding := &fakeBinding{key: "bound-key", exists: true}
 	deps, call, created := testDependencies(engine, binding)
