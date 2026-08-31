@@ -208,7 +208,7 @@ tokener keys set-status <key-id> --status active -o json
 - Auth: required
 - Body: none
 - Flags: none
-- Output: list path `models`; columns `id`, `name`, `provider`, `context`, `inputPer1m`, `outputPer1m`; response media `application/json`
+- Output: list path `models`; columns `id`, `name`, `provider`, `context`, `inputPer1m`, `cachePer1m`, `outputPer1m`; response media `application/json`
 - Example:
 
 ```

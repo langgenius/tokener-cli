@@ -324,13 +324,14 @@ commands:
       tokener models list
       tokener models list -o json
     output:
-      default_columns: [id, name, provider, context, inputPer1m, outputPer1m]
+      default_columns: [id, name, provider, context, inputPer1m, cachePer1m, outputPer1m]
       column_labels:
         id: MODEL
         name: NAME
         provider: PROVIDER
         context: CONTEXT
         inputPer1m: "INPUT / 1M"
+        cachePer1m: "CACHE / 1M"
         outputPer1m: "OUTPUT / 1M"
 
   public-model-catalog:
