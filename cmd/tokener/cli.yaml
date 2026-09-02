@@ -22,7 +22,10 @@ auth:
 skill:
   root: skills
   bundle: true
-  include: internal/skill-include
+  include:
+    path: internal/skill-include
+    files:
+      SKILL.md: replace
 
 update:
   github:
