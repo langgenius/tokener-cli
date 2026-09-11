@@ -137,7 +137,7 @@ func TestLaunchSpecKeepsKeyOutOfRequestAndArguments(t *testing.T) {
 		Gateway: gatewayProfile{
 			ProviderID:    "tokener",
 			Name:          "Tokener",
-			Endpoint:      gatewayEndpoint,
+			Endpoint:      defaultGatewayEndpoint,
 			CredentialEnv: credentialEnv,
 		},
 		StateDir:         filepath.Join(t.TempDir(), "state"),

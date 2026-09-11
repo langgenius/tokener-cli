@@ -12,24 +12,6 @@ import (
 	"github.com/lathe-cli/lathe/pkg/runtime"
 )
 
-const managementHostname = "console.tokener.dev"
-
-func createAgentKey(ctx context.Context) (string, error) {
-	hosts, err := config.LoadHosts()
-	if err != nil {
-		return "", fmt.Errorf("load Tokener management identity: %w", err)
-	}
-	entry, exists := hosts.Get(managementHostname)
-	if !exists || !hasCredential(entry) {
-		return "", errors.New("Tokener management login is required; run `tokener auth login`")
-	}
-	auth, err := runtime.NewAuthFromHost(entry)
-	if err != nil {
-		return "", fmt.Errorf("load Tokener management identity: %w", err)
-	}
-	return createKeyRequest(ctx, managementHostname, runtime.ClientOptions{Auth: auth, Insecure: entry.Insecure})
-}
-
 func createKeyRequest(ctx context.Context, hostname string, options runtime.ClientOptions) (string, error) {
 	result, err := runtime.DoRawFull(ctx, hostname, http.MethodPost, "/api/v1/keys", map[string]string{"name": "Tokener Agent CLI"}, options)
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 type fakeEngine struct {
@@ -21,17 +23,21 @@ func (engine *fakeEngine) Resolve(_ context.Context, harness string) (string, er
 }
 
 type fakeBinding struct {
-	key    string
-	exists bool
-	err    error
-	saved  []string
+	key      string
+	exists   bool
+	err      error
+	saved    []string
+	hosts    []string
+	loadHost string
 }
 
-func (binding *fakeBinding) Load() (string, bool, error) {
+func (binding *fakeBinding) Load(hostname string) (string, bool, error) {
+	binding.loadHost = hostname
 	return binding.key, binding.exists, binding.err
 }
 
-func (binding *fakeBinding) Save(key string) error {
+func (binding *fakeBinding) Save(hostname, key string) error {
+	binding.hosts = append(binding.hosts, hostname)
 	binding.saved = append(binding.saved, key)
 	return binding.err
 }
@@ -49,7 +55,16 @@ func testDependencies(engine *fakeEngine, binding *fakeBinding) (dependencies, *
 	return dependencies{
 		engine:   engine,
 		bindings: binding,
-		createKey: func(context.Context) (string, error) {
+		resolveHostname: func(*cobra.Command) (string, string, bool, error) {
+			return defaultManagementHostname, "test", false, nil
+		},
+		resolveTarget: func(*cobra.Command) (agentTarget, error) {
+			return agentTarget{
+				Hostname: defaultManagementHostname,
+				Gateway:  defaultGatewayEndpoint,
+			}, nil
+		},
+		createKey: func(context.Context, agentTarget) (string, error) {
 			created++
 			return "created-key", nil
 		},
@@ -79,7 +94,7 @@ func executeAgent(t *testing.T, deps dependencies, args ...string) error {
 	return command.Execute()
 }
 
-func TestAgentLaunchUsesBoundKeyFixedGatewayAndNativeArguments(t *testing.T) {
+func TestAgentLaunchUsesBoundKeyResolvedGatewayAndNativeArguments(t *testing.T) {
 	t.Setenv(credentialEnv, "ignored-environment-key")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	engine := &fakeEngine{path: "/engine/rx"}
@@ -95,14 +110,37 @@ func TestAgentLaunchUsesBoundKeyFixedGatewayAndNativeArguments(t *testing.T) {
 	if call.path != "/engine/rx" || call.key != "bound-key" {
 		t.Fatalf("launch path/key = %q/%q", call.path, call.key)
 	}
-	if call.request.Harness != "codex" || call.request.Gateway.Endpoint != gatewayEndpoint || call.request.Gateway.ProviderID != "tokener" {
+	if call.request.Harness != "codex" || call.request.Gateway.Endpoint != defaultGatewayEndpoint || call.request.Gateway.ProviderID != "tokener" {
 		t.Fatalf("request = %#v", call.request)
+	}
+	if binding.loadHost != defaultManagementHostname {
+		t.Fatalf("load host = %q", binding.loadHost)
 	}
 	if call.request.PermissionPolicy != "standard" || call.request.InstallPolicy != "prompt" {
 		t.Fatalf("policies = %q/%q", call.request.PermissionPolicy, call.request.InstallPolicy)
 	}
 	if !slices.Equal(call.args, []string{"resume", "session-1", "--dangerously-bypass-approvals-and-sandbox"}) {
 		t.Fatalf("native args = %v", call.args)
+	}
+}
+
+func TestAgentLaunchUsesHostMappedGateway(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	engine := &fakeEngine{path: "/engine/rx"}
+	binding := &fakeBinding{key: "bound-key", exists: true}
+	deps, call, _ := testDependencies(engine, binding)
+	deps.resolveHostname = func(*cobra.Command) (string, string, bool, error) {
+		return "console-staging.tokener.dev", "selected", true, nil
+	}
+
+	if err := executeAgent(t, deps, "codex"); err != nil {
+		t.Fatal(err)
+	}
+	if call.request.Gateway.Endpoint != "https://api-staging.tokener.dev/v1" {
+		t.Fatalf("gateway = %q", call.request.Gateway.Endpoint)
+	}
+	if binding.loadHost != "console-staging.tokener.dev" {
+		t.Fatalf("load host = %q", binding.loadHost)
 	}
 }
 
@@ -182,6 +220,9 @@ func TestInteractiveMissingKeyCreatesBindingAndExits(t *testing.T) {
 	if *created != 1 || !slices.Equal(binding.saved, []string{"created-key"}) || call.path != "" {
 		t.Fatalf("created/saved/launch = %d/%v/%q", *created, binding.saved, call.path)
 	}
+	if !slices.Equal(binding.hosts, []string{defaultManagementHostname}) {
+		t.Fatalf("saved hosts = %v", binding.hosts)
+	}
 	if !strings.Contains(output.String(), "created and bound") || !strings.Contains(output.String(), "Run the command again") {
 		t.Fatalf("output = %q", output.String())
 	}
@@ -212,8 +253,9 @@ func TestKeyStatusReportsUnboundAndBoundPrefix(t *testing.T) {
 	if *created != 0 || call.path != "" {
 		t.Fatalf("status created/launch = %d/%q", *created, call.path)
 	}
-	if !strings.Contains(stdout.String(), "bound: false") {
-		t.Fatalf("unbound output = %q", stdout.String())
+	out := stdout.String()
+	if !strings.Contains(out, "bound: false") || !strings.Contains(out, "host: "+defaultManagementHostname) || !strings.Contains(out, "gateway: "+defaultGatewayEndpoint) {
+		t.Fatalf("unbound output = %q", out)
 	}
 
 	binding.key = "sk-abcdefghijklmnopqrstuvwxyz"
@@ -222,7 +264,7 @@ func TestKeyStatusReportsUnboundAndBoundPrefix(t *testing.T) {
 	if err := executeAgent(t, deps, "key", "status"); err != nil {
 		t.Fatal(err)
 	}
-	out := stdout.String()
+	out = stdout.String()
 	if !strings.Contains(out, "bound: true") || !strings.Contains(out, "sk-abcde") {
 		t.Fatalf("bound output = %q", out)
 	}
@@ -260,5 +302,8 @@ func TestKeySubcommandsAreLoginRegenerateAndStatus(t *testing.T) {
 	}
 	if *created != 1 || !slices.Equal(binding.saved, []string{"created-key"}) {
 		t.Fatalf("regenerate created/saved = %d/%v", *created, binding.saved)
+	}
+	if !slices.Equal(binding.hosts, []string{defaultManagementHostname}) {
+		t.Fatalf("regenerate hosts = %v", binding.hosts)
 	}
 }
