@@ -5,20 +5,20 @@
 class Tokener < Formula
   desc "Command-line client and agent launcher for Tokener.ai"
   homepage "https://tokener.dev/"
-  version "0.1.4"
+  version "0.1.5"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.4/tokener_0.1.4_darwin_amd64.tar.gz"
-      sha256 "7ced4a019e9fb2781c44692ffcb1735f3445e0e20da09feef148f714c4104cfa"
+      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.5/tokener_0.1.5_darwin_amd64.tar.gz"
+      sha256 "59e2c6d5abf4d92f4929de9888716bd17a2db65e6018fbc01b58f9da005fd814"
 
       define_method(:install) do
         bin.install "tokener"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.4/tokener_0.1.4_darwin_arm64.tar.gz"
-      sha256 "0702f4bc9be0b655ef22db770102a737690cb5caf915f2e04eff798b00e2da3f"
+      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.5/tokener_0.1.5_darwin_arm64.tar.gz"
+      sha256 "0bede4a624b43026bcfaf360d928562524df47fb6fe2780bd642dbd8e0b499ce"
 
       define_method(:install) do
         bin.install "tokener"
@@ -28,8 +28,8 @@ class Tokener < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.4/tokener_0.1.4_linux_amd64.tar.gz"
-      sha256 "f31284f66f66b64cc0fcf23f6672ca20829cc40c43811d04270384821930df67"
+      url "https://github.com/langgenius/tokener-cli/releases/download/v0.1.5/tokener_0.1.5_linux_amd64.tar.gz"
+      sha256 "f76572d98da05fd84c8451eee0f4b4e46c11e977e013ca07a5807250f4081c76"
       define_method(:install) do
         bin.install "tokener"
       end
