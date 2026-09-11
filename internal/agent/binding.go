@@ -11,45 +11,40 @@ import (
 	"github.com/lathe-cli/lathe/pkg/config"
 )
 
-type fileBinding struct {
-	path func() (string, error)
-}
+type fileBinding struct{}
 
 type bindingDocument struct {
 	Key string `json:"key"`
 }
 
 func newFileBinding() fileBinding {
-	return fileBinding{path: bindingPath}
+	return fileBinding{}
 }
 
-func (binding fileBinding) Load() (string, bool, error) {
-	path, err := binding.path()
+func (binding fileBinding) Load(hostname string) (string, bool, error) {
+	path, err := bindingPathFor(hostname)
 	if err != nil {
 		return "", false, err
 	}
-	data, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
+	key, exists, err := loadBindingFile(path)
+	if err != nil || exists {
+		return key, exists, err
+	}
+	if config.NormalizeHostname(hostname) != defaultManagementHostname {
 		return "", false, nil
 	}
+	legacy, err := bindingPath()
 	if err != nil {
-		return "", false, fmt.Errorf("read agent key binding: %w", err)
+		return "", false, err
 	}
-	var document bindingDocument
-	if err := json.Unmarshal(data, &document); err != nil {
-		return "", false, fmt.Errorf("parse agent key binding: %w", err)
-	}
-	if strings.TrimSpace(document.Key) == "" {
-		return "", false, errors.New("agent key binding is empty")
-	}
-	return document.Key, true, nil
+	return loadBindingFile(legacy)
 }
 
-func (binding fileBinding) Save(key string) error {
+func (binding fileBinding) Save(hostname, key string) error {
 	if key == "" {
 		return errors.New("agent key is empty")
 	}
-	path, err := binding.path()
+	path, err := bindingPathFor(hostname)
 	if err != nil {
 		return err
 	}
@@ -94,12 +89,46 @@ func (binding fileBinding) Save(key string) error {
 	return nil
 }
 
+func loadBindingFile(path string) (string, bool, error) {
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("read agent key binding: %w", err)
+	}
+	var document bindingDocument
+	if err := json.Unmarshal(data, &document); err != nil {
+		return "", false, fmt.Errorf("parse agent key binding: %w", err)
+	}
+	if strings.TrimSpace(document.Key) == "" {
+		return "", false, errors.New("agent key binding is empty")
+	}
+	return document.Key, true, nil
+}
+
+func bindingPathFor(hostname string) (string, error) {
+	dir, err := configDirectory()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "agent-keys", bindingFileName(hostname)), nil
+}
+
 func bindingPath() (string, error) {
 	dir, err := configDirectory()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, "agent-key.json"), nil
+}
+
+func bindingFileName(hostname string) string {
+	normalized := config.NormalizeHostname(hostname)
+	normalized = strings.ReplaceAll(normalized, "://", "_")
+	normalized = strings.ReplaceAll(normalized, "/", "_")
+	normalized = strings.ReplaceAll(normalized, ":", "_")
+	return normalized + ".json"
 }
 
 func configDirectory() (string, error) {

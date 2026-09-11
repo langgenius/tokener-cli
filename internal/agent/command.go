@@ -14,10 +14,7 @@ import (
 	"golang.org/x/term"
 )
 
-const (
-	gatewayEndpoint = "https://api.tokener.dev/v1"
-	credentialEnv   = "TOKENER_API_KEY"
-)
+const credentialEnv = "TOKENER_API_KEY"
 
 var harnesses = []string{"claude", "codex", "opencode", "pi", "dsh", "kimi"}
 
@@ -26,28 +23,33 @@ type engineResolver interface {
 }
 
 type keyBinding interface {
-	Load() (string, bool, error)
-	Save(string) error
+	Load(hostname string) (string, bool, error)
+	Save(hostname, key string) error
 }
 
 type dependencies struct {
-	engine      engineResolver
-	bindings    keyBinding
-	createKey   func(context.Context) (string, error)
-	launch      func(string, hostRequest, []string, string) error
-	interactive func() bool
-	stdin       io.Reader
-	stdout      io.Writer
-	stderr      io.Writer
+	engine          engineResolver
+	bindings        keyBinding
+	resolveHostname func(*cobra.Command) (string, string, bool, error)
+	resolveTarget   func(*cobra.Command) (agentTarget, error)
+	createKey       func(context.Context, agentTarget) (string, error)
+	launch          func(string, hostRequest, []string, string) error
+	interactive     func() bool
+	stdin           io.Reader
+	stdout          io.Writer
+	stderr          io.Writer
 }
 
 func NewCommand() *cobra.Command {
-	bindings := newFileBinding()
 	return newCommand(dependencies{
-		engine:    newEmbeddedEngine(),
-		bindings:  bindings,
-		createKey: createAgentKey,
-		launch:    launchEngine,
+		engine:          newEmbeddedEngine(),
+		bindings:        newFileBinding(),
+		resolveHostname: resolveManagementHostname,
+		resolveTarget:   resolveAgentTarget,
+		createKey: func(ctx context.Context, target agentTarget) (string, error) {
+			return createKeyRequest(ctx, target.Hostname, target.Options)
+		},
+		launch: launchEngine,
 		interactive: func() bool {
 			return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stderr.Fd()))
 		},
@@ -72,7 +74,7 @@ func newCommand(deps dependencies) *cobra.Command {
 			if len(args) == 0 && !deps.interactive() {
 				return missingHarness(cmd, deps)
 			}
-			return visibleError(runAgent(cmd.Context(), deps, args))
+			return visibleError(runAgent(cmd, deps, args))
 		},
 	}
 	cmd.SetIn(deps.stdin)
@@ -116,7 +118,7 @@ func newKeyCommand(deps dependencies) *cobra.Command {
 		Short: "Create and bind an agent key when none is configured",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(loginKey(cmd.Context(), deps))
+			return visibleError(loginKey(cmd, deps))
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -124,7 +126,7 @@ func newKeyCommand(deps dependencies) *cobra.Command {
 		Short: "Create and bind a new agent key",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(regenerateKey(cmd.Context(), deps))
+			return visibleError(regenerateKey(cmd, deps))
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -132,22 +134,30 @@ func newKeyCommand(deps dependencies) *cobra.Command {
 		Short: "Show the local Tokener agent key binding",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(statusKey(deps))
+			return visibleError(statusKey(cmd, deps))
 		},
 	})
 	return cmd
 }
 
-func statusKey(deps dependencies) error {
-	key, exists, err := deps.bindings.Load()
+func statusKey(cmd *cobra.Command, deps dependencies) error {
+	hostname, _, _, err := deps.resolveHostname(cmd)
+	if err != nil {
+		return err
+	}
+	gateway, err := gatewayEndpointFor(hostname)
+	if err != nil {
+		return err
+	}
+	key, exists, err := deps.bindings.Load(hostname)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		_, err = fmt.Fprintf(deps.stdout, "bound: false\nhost: %s\n", managementHostname)
+		_, err = fmt.Fprintf(deps.stdout, "bound: false\nhost: %s\ngateway: %s\n", hostname, gateway)
 		return err
 	}
-	_, err = fmt.Fprintf(deps.stdout, "bound: true\nprefix: %s\nhost: %s\n", keyPrefix(key), managementHostname)
+	_, err = fmt.Fprintf(deps.stdout, "bound: true\nprefix: %s\nhost: %s\ngateway: %s\n", keyPrefix(key), hostname, gateway)
 	return err
 }
 
@@ -159,24 +169,34 @@ func keyPrefix(key string) string {
 	return key[:visible]
 }
 
-func loginKey(ctx context.Context, deps dependencies) error {
-	if _, err := deps.engine.Resolve(ctx, ""); err != nil {
+func loginKey(cmd *cobra.Command, deps dependencies) error {
+	if _, err := deps.engine.Resolve(cmd.Context(), ""); err != nil {
 		return err
 	}
-	if _, exists, err := deps.bindings.Load(); err != nil {
+	target, err := deps.resolveTarget(cmd)
+	if err != nil {
+		return err
+	}
+	noticeCurrentHost(deps.stderr, target.Hostname, target.Ambiguous)
+	if _, exists, err := deps.bindings.Load(target.Hostname); err != nil {
 		return err
 	} else if exists {
 		_, err = fmt.Fprintln(deps.stdout, "Tokener agent key is already bound.")
 		return err
 	}
-	return createAndBind(ctx, deps)
+	return createAndBind(cmd.Context(), deps, target)
 }
 
-func regenerateKey(ctx context.Context, deps dependencies) error {
-	if _, err := deps.engine.Resolve(ctx, ""); err != nil {
+func regenerateKey(cmd *cobra.Command, deps dependencies) error {
+	if _, err := deps.engine.Resolve(cmd.Context(), ""); err != nil {
 		return err
 	}
-	return createAndBind(ctx, deps)
+	target, err := deps.resolveTarget(cmd)
+	if err != nil {
+		return err
+	}
+	noticeCurrentHost(deps.stderr, target.Hostname, target.Ambiguous)
+	return createAndBind(cmd.Context(), deps, target)
 }
 
 func visibleError(err error) error {
@@ -200,7 +220,7 @@ func visibleError(err error) error {
 	)
 }
 
-func runAgent(ctx context.Context, deps dependencies, args []string) error {
+func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 	harness := ""
 	nativeArgs := args
 	if len(args) > 0 {
@@ -216,11 +236,20 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 			)
 		}
 	}
-	enginePath, err := deps.engine.Resolve(ctx, harness)
+	enginePath, err := deps.engine.Resolve(cmd.Context(), harness)
 	if err != nil {
 		return err
 	}
-	key, err := resolveAgentKey(deps.bindings)
+	hostname, _, ambiguous, err := deps.resolveHostname(cmd)
+	if err != nil {
+		return err
+	}
+	gateway, err := gatewayEndpointFor(hostname)
+	if err != nil {
+		return err
+	}
+	noticeCurrentHost(deps.stderr, hostname, ambiguous)
+	key, err := resolveAgentKey(deps.bindings, hostname)
 	if err != nil {
 		return err
 	}
@@ -235,7 +264,11 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 		if !confirmed {
 			return errors.New("Tokener agent key creation cancelled")
 		}
-		if err := createAndBind(ctx, deps); err != nil {
+		target, err := deps.resolveTarget(cmd)
+		if err != nil {
+			return err
+		}
+		if err := createAndBind(cmd.Context(), deps, target); err != nil {
 			return err
 		}
 		_, err = fmt.Fprintln(deps.stdout, "Run the command again to launch the agent.")
@@ -250,7 +283,7 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 		Gateway: gatewayProfile{
 			ProviderID:    "tokener",
 			Name:          "Tokener",
-			Endpoint:      gatewayEndpoint,
+			Endpoint:      gateway,
 			CredentialEnv: credentialEnv,
 		},
 		StateDir:         stateDir,
@@ -260,20 +293,20 @@ func runAgent(ctx context.Context, deps dependencies, args []string) error {
 	return deps.launch(enginePath, request, nativeArgs, key)
 }
 
-func createAndBind(ctx context.Context, deps dependencies) error {
-	key, err := deps.createKey(ctx)
+func createAndBind(ctx context.Context, deps dependencies, target agentTarget) error {
+	key, err := deps.createKey(ctx, target)
 	if err != nil {
 		return err
 	}
-	if err := deps.bindings.Save(key); err != nil {
+	if err := deps.bindings.Save(target.Hostname, key); err != nil {
 		return err
 	}
 	_, err = fmt.Fprintln(deps.stdout, "Tokener agent key created and bound.")
 	return err
 }
 
-func resolveAgentKey(bindings keyBinding) (string, error) {
-	key, exists, err := bindings.Load()
+func resolveAgentKey(bindings keyBinding, hostname string) (string, error) {
+	key, exists, err := bindings.Load(hostname)
 	if err != nil || !exists {
 		return "", err
 	}
