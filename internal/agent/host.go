@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"os"
@@ -19,19 +20,16 @@ const (
 
 type agentTarget struct {
 	Hostname  string
-	Source    string
-	Gateway   string
 	Ambiguous bool
 	Options   runtime.ClientOptions
 }
 
 func resolveAgentTarget(cmd *cobra.Command) (agentTarget, error) {
-	hostname, source, ambiguous, err := resolveManagementHostname(cmd)
+	hostname, ambiguous, err := resolveManagementHostname(cmd)
 	if err != nil {
 		return agentTarget{}, err
 	}
-	gateway, err := gatewayEndpointFor(hostname)
-	if err != nil {
+	if _, err := gatewayEndpointFor(hostname); err != nil {
 		return agentTarget{}, err
 	}
 	hosts, err := config.LoadHosts()
@@ -46,40 +44,26 @@ func resolveAgentTarget(cmd *cobra.Command) (agentTarget, error) {
 			hostname,
 		)
 	}
-	insecure := entry.Insecure
-	if value, flagErr := cmd.Root().PersistentFlags().GetBool("insecure"); flagErr == nil && value {
-		insecure = true
-	}
+	insecure, _ := cmd.Root().PersistentFlags().GetBool("insecure")
 	auth, err := runtime.NewAuthFromHost(entry)
 	if err != nil {
 		return agentTarget{}, fmt.Errorf("load Tokener management identity: %w", err)
 	}
 	return agentTarget{
 		Hostname:  hostname,
-		Source:    source,
-		Gateway:   gateway,
 		Ambiguous: ambiguous,
-		Options:   runtime.ClientOptions{Auth: auth, Insecure: insecure},
+		Options:   runtime.ClientOptions{Auth: auth, Insecure: insecure || entry.Insecure},
 	}, nil
 }
 
-func resolveManagementHostname(cmd *cobra.Command) (string, string, bool, error) {
+func resolveManagementHostname(cmd *cobra.Command) (string, bool, error) {
 	hosts, err := config.LoadHosts()
 	if err != nil {
-		return "", "", false, err
+		return "", false, err
 	}
-	if hostname, _ := cmd.Root().PersistentFlags().GetString("hostname"); hostname != "" {
-		return config.NormalizeHostname(hostname), runtime.HostSourceFlag, len(hosts.Names()) > 1, nil
-	}
-	if hostname := os.Getenv(config.Active().CLI.HostEnv); hostname != "" {
-		return config.NormalizeHostname(hostname), runtime.HostSourceEnv, len(hosts.Names()) > 1, nil
-	}
-	names := hosts.Names()
-	ambiguous := len(names) > 1
-	if selected := hosts.Selected(); selected != "" {
-		return selected, runtime.HostSourceSelected, ambiguous, nil
-	}
-	return defaultManagementHostname, runtime.HostSourceCodegenDefault, ambiguous, nil
+	hostname, _ := cmd.Root().PersistentFlags().GetString("hostname")
+	hostname = cmp.Or(hostname, os.Getenv(config.Active().CLI.HostEnv), hosts.Selected(), defaultManagementHostname)
+	return config.NormalizeHostname(hostname), len(hosts.Names()) > 1, nil
 }
 
 func gatewayEndpointFor(hostname string) (string, error) {
@@ -117,5 +101,18 @@ func isLocalConsole(hostname string) bool {
 func noticeCurrentHost(stderr io.Writer, hostname string, ambiguous bool) {
 	if ambiguous && hostname != "" {
 		_, _ = fmt.Fprintf(stderr, "current host: %s\n", hostname)
+	}
+}
+
+func hasCredential(entry config.HostEntry) bool {
+	switch entry.AuthType {
+	case "", "bearer":
+		return entry.OAuthToken != ""
+	case "apikey":
+		return entry.APIKey != ""
+	case "basic":
+		return entry.BasicUser != ""
+	default:
+		return false
 	}
 }

@@ -10,7 +10,7 @@ description: >
 
 `tokener search "<intent>" --json` indexes API commands only. Inspect an unfamiliar API command with `tokener commands show <path...> --json` before running it. Do not guess flags or body shape, and do not execute from search results. Prefer `-o json`. On error, read `error.code`, `error.message`, and `error.hint`. If `mutation` is not `read`, pass `--dry-run` first unless the user confirmed execution.
 
-API command index: `references/modules/tokener-ai-console-management-api.md`.
+Use `tokener commands --json` for the full API index and `references/catalog.md` for discovery and execution rules.
 
 ## Auth
 

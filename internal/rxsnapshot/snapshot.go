@@ -12,15 +12,15 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/langgenius/tokener-cli/internal/atomicfile"
 )
 
 const Schema = 1
 
 type Target struct {
-	Key    string
-	Path   string
-	GOOS   string
-	GOARCH string
+	Key  string
+	Path string
 }
 
 type Source struct {
@@ -48,20 +48,14 @@ type Snapshot struct {
 }
 
 var targets = []Target{
-	{Key: "darwin/amd64", Path: "internal/agent/assets/rx-darwin-amd64", GOOS: "darwin", GOARCH: "amd64"},
-	{Key: "darwin/arm64", Path: "internal/agent/assets/rx", GOOS: "darwin", GOARCH: "arm64"},
-	{Key: "linux/amd64", Path: "internal/agent/assets/rx-linux-amd64", GOOS: "linux", GOARCH: "amd64"},
-	{Key: "windows/amd64", Path: "internal/agent/assets/rx-windows-amd64.exe", GOOS: "windows", GOARCH: "amd64"},
+	{Key: "darwin/amd64", Path: "internal/agent/assets/rx-darwin-amd64"},
+	{Key: "darwin/arm64", Path: "internal/agent/assets/rx"},
+	{Key: "linux/amd64", Path: "internal/agent/assets/rx-linux-amd64"},
+	{Key: "windows/amd64", Path: "internal/agent/assets/rx-windows-amd64.exe"},
 }
 
 var revisionPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 var digestPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
-
-func Targets() []Target {
-	result := make([]Target, len(targets))
-	copy(result, targets)
-	return result
-}
 
 func Parse(contents []byte) (Snapshot, error) {
 	decoder := json.NewDecoder(bytes.NewReader(contents))
@@ -91,20 +85,18 @@ func (snapshot Snapshot) Validate() error {
 	if snapshot.Schema != Schema {
 		return fmt.Errorf("rx snapshot schema = %d, expected %d", snapshot.Schema, Schema)
 	}
-	if strings.TrimSpace(snapshot.Source.Repository) == "" {
-		return errors.New("rx snapshot repository is empty")
-	}
-	if strings.TrimSpace(snapshot.Source.Ref) == "" {
-		return errors.New("rx snapshot ref is empty")
+	for _, field := range []struct{ name, value string }{
+		{"repository", snapshot.Source.Repository},
+		{"ref", snapshot.Source.Ref},
+		{"version", snapshot.Source.Version},
+		{"Rust toolchain", snapshot.Build.RustToolchain},
+	} {
+		if strings.TrimSpace(field.value) == "" {
+			return fmt.Errorf("rx snapshot %s is empty", field.name)
+		}
 	}
 	if !revisionPattern.MatchString(snapshot.Source.Revision) {
 		return errors.New("rx snapshot revision must be a full lowercase commit SHA")
-	}
-	if strings.TrimSpace(snapshot.Source.Version) == "" {
-		return errors.New("rx snapshot version is empty")
-	}
-	if strings.TrimSpace(snapshot.Build.RustToolchain) == "" {
-		return errors.New("rx snapshot Rust toolchain is empty")
 	}
 	if !strings.HasPrefix(snapshot.Build.Provenance, "https://github.com/") {
 		return errors.New("rx snapshot provenance must be a GitHub URL")
@@ -187,32 +179,7 @@ func Write(path string, snapshot Snapshot) error {
 		return fmt.Errorf("encode rx snapshot: %w", err)
 	}
 	contents = append(contents, '\n')
-	dir := filepath.Dir(path)
-	temporary, err := os.CreateTemp(dir, ".rx-lock-*.tmp")
-	if err != nil {
-		return fmt.Errorf("create rx snapshot: %w", err)
-	}
-	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
-	if err := temporary.Chmod(0o644); err != nil {
-		temporary.Close()
-		return fmt.Errorf("set rx snapshot mode: %w", err)
-	}
-	if _, err := temporary.Write(contents); err != nil {
-		temporary.Close()
-		return fmt.Errorf("write rx snapshot: %w", err)
-	}
-	if err := temporary.Sync(); err != nil {
-		temporary.Close()
-		return fmt.Errorf("sync rx snapshot: %w", err)
-	}
-	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("close rx snapshot: %w", err)
-	}
-	if err := os.Rename(temporaryPath, path); err != nil {
-		return fmt.Errorf("replace rx snapshot: %w", err)
-	}
-	return nil
+	return atomicfile.Write(path, contents, 0o644)
 }
 
 func fileSHA256(path string) (string, error) {
@@ -220,6 +187,10 @@ func fileSHA256(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read rx artifact %s: %w", path, err)
 	}
-	digest := sha256.Sum256(contents)
-	return hex.EncodeToString(digest[:]), nil
+	return Digest(contents), nil
+}
+
+func Digest(data []byte) string {
+	digest := sha256.Sum256(data)
+	return hex.EncodeToString(digest[:])
 }

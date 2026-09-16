@@ -10,7 +10,36 @@ Tokener.ai API key, not to this CLI.
 
 ## Architecture
 
-[![Tokener CLI runtime architecture](docs/tokener-architecture.svg)](docs/tokener-architecture.svg)
+```mermaid
+flowchart LR
+  spec["Pinned OpenAPI + overlays"] -->|Lathe| generated["internal/generated"]
+  generated --> main["cmd/tokener"]
+  main -->|API commands / Lathe auth| console["Console management API"]
+  main --> command["agent/command.go"]
+  command --> keys["agent/keys.go"]
+  keys -->|create key| console
+  keys --> binding["agent/binding.go: per-host key files"]
+  command --> engine["agent/engine.go: verified rx cache"]
+  engine --> launch["agent/launch.go: host protocol"]
+  launch --> harness["Native coding harness"]
+  harness -->|model traffic| gateway["Tokener Gateway"]
+  lock["rx.lock.json + four native assets"] --> engine
+```
+
+`host.go` resolves the management host and its gateway. Agent keys stay in
+per-host config files; only the default host reads the legacy `agent-key.json`.
+`atomicfile` owns temporary-file writes and platform-specific replacement for
+bindings, cached engines, and the snapshot lock. Engine extraction verifies
+SHA-256, retains old digest directories for rollback, and validates `TOKENER_RX`
+overrides through the rx host handshake. The launch request contains the gateway
+profile; its credential travels separately in `TOKENER_API_KEY`.
+
+`make cli-sync` rebuilds the management commands and bundled Skill from the
+pinned spec, overlay, and `internal/skill-include/`. The Skill discovers commands
+through the binary's catalog. `refresh-rx.yml` builds and probes four native
+engines, records their source and checksums, and opens a snapshot PR. Release
+tags run `make ci-check` before GoReleaser packages the binaries and opens the
+Homebrew update PR.
 
 ## Install
 
@@ -38,7 +67,10 @@ the [GitHub Releases](https://github.com/langgenius/tokener-cli/releases) page.
 | `specs/sources.yaml` | spec source declaration for `lathe specsync`, pinned to an upstream tag |
 | `cli.yaml` | generated CLI identity, auth validation, skill, and update config |
 | `overlays/console.yaml` | human-facing command names, help, examples, and parameter presentation |
-| `cmd/tokener/main.go` | thin runtime entrypoint |
+| `cmd/tokener/main.go` | runtime entrypoint and auth-login defaults |
+| `internal/agent/` | key lifecycle, host selection, engine extraction, and launch |
+| `internal/rxsnapshot/` | embedded engine provenance and artifact verification |
+| `internal/skill-include/` | authored Skill instructions and catalog protocol |
 | `internal/generated/` | generated command specs (do not edit) |
 | `skills/tokener/` | generated agent Skill (do not edit) |
 

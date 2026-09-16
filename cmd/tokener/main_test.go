@@ -9,21 +9,16 @@ import (
 
 func TestConfigureAuthLoginDefaults(t *testing.T) {
 	tests := []struct {
-		name         string
-		env          string
-		explicitHost string
-		withToken    bool
-		withoutToken bool
-		authType     string
-		wantHost     string
-		wantAuthType string
+		name, env  string
+		args       []string
+		host, auth string
 	}{
-		{name: "default", wantHost: managementHostname, wantAuthType: "oauth"},
-		{name: "environment", env: "env.tokener.test", wantHost: "env.tokener.test", wantAuthType: "oauth"},
-		{name: "explicit host", env: "env.tokener.test", explicitHost: "flag.tokener.test", wantHost: "flag.tokener.test", wantAuthType: "oauth"},
-		{name: "implicit token type", withToken: true, wantHost: managementHostname, wantAuthType: "bearer"},
-		{name: "explicit token type", withToken: true, authType: "oauth", wantHost: managementHostname, wantAuthType: "oauth"},
-		{name: "disabled token mode", withoutToken: true, wantHost: managementHostname, wantAuthType: "oauth"},
+		{"default", "", nil, managementHostname, "oauth"},
+		{"environment", "env.tokener.test", nil, "env.tokener.test", "oauth"},
+		{"explicit host", "env.tokener.test", []string{"--hostname", "flag.tokener.test"}, "flag.tokener.test", "oauth"},
+		{"implicit token type", "", []string{"--with-token"}, managementHostname, "bearer"},
+		{"explicit token type", "", []string{"--with-token", "--auth-type", "oauth"}, managementHostname, "oauth"},
+		{"disabled token mode", "", []string{"--with-token=false"}, managementHostname, "oauth"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -49,28 +44,15 @@ func TestConfigureAuthLoginDefaults(t *testing.T) {
 			if err := configureAuthLogin(root); err != nil {
 				t.Fatal(err)
 			}
-			args := []string{"auth", "login"}
-			if test.explicitHost != "" {
-				args = append(args, "--hostname", test.explicitHost)
-			}
-			if test.withToken {
-				args = append(args, "--with-token")
-			}
-			if test.withoutToken {
-				args = append(args, "--with-token=false")
-			}
-			if test.authType != "" {
-				args = append(args, "--auth-type", test.authType)
-			}
-			root.SetArgs(args)
+			root.SetArgs(append([]string{"auth", "login"}, test.args...))
 			if err := root.Execute(); err != nil {
 				t.Fatal(err)
 			}
-			if gotHost != test.wantHost {
-				t.Fatalf("hostname = %q, want %q", gotHost, test.wantHost)
+			if gotHost != test.host {
+				t.Fatalf("hostname = %q, want %q", gotHost, test.host)
 			}
-			if gotAuthType != test.wantAuthType {
-				t.Fatalf("auth type = %q, want %q", gotAuthType, test.wantAuthType)
+			if gotAuthType != test.auth {
+				t.Fatalf("auth type = %q, want %q", gotAuthType, test.auth)
 			}
 		})
 	}

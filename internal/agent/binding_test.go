@@ -24,7 +24,7 @@ func bindAgentTestManifest(t *testing.T) string {
 
 func TestFileBindingSavesLoadsAndReplacesAtomically(t *testing.T) {
 	bindAgentTestManifest(t)
-	binding := newFileBinding()
+	binding := fileBinding{}
 	hostname := "console-staging.tokener.dev"
 
 	if err := binding.Save(hostname, "first-key"); err != nil {
@@ -58,7 +58,7 @@ func TestFileBindingSavesLoadsAndReplacesAtomically(t *testing.T) {
 
 func TestFileBindingIsolatesHostsAndFallsBackToLegacyDefault(t *testing.T) {
 	dir := bindAgentTestManifest(t)
-	binding := newFileBinding()
+	binding := fileBinding{}
 	if err := binding.Save("console.tokener.dev", "prod-key"); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestFileBindingIsolatesHostsAndFallsBackToLegacyDefault(t *testing.T) {
 	if err := os.WriteFile(legacy, []byte(`{"key":"legacy-key"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	isolated := newFileBinding()
+	isolated := fileBinding{}
 	if err := os.RemoveAll(filepath.Join(dir, "agent-keys")); err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestFileBindingIsolatesHostsAndFallsBackToLegacyDefault(t *testing.T) {
 
 func TestFileBindingRejectsEmptyAndMalformedDocuments(t *testing.T) {
 	bindAgentTestManifest(t)
-	binding := newFileBinding()
+	binding := fileBinding{}
 	if err := binding.Save(defaultManagementHostname, ""); err == nil {
 		t.Fatal("empty key was accepted")
 	}

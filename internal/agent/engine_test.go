@@ -10,12 +10,14 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/langgenius/tokener-cli/internal/rxsnapshot"
 )
 
 func testEngine(data []byte, root string) embeddedEngine {
 	return embeddedEngine{
 		data:       data,
-		digest:     sha256Hex(data),
+		digest:     rxsnapshot.Digest(data),
 		version:    "test",
 		targetOS:   runtime.GOOS,
 		targetArch: runtime.GOARCH,
@@ -24,37 +26,40 @@ func testEngine(data []byte, root string) embeddedEngine {
 	}
 }
 
-func TestEmbeddedEngineExtractionIsRepeatableAndRepairsCorruption(t *testing.T) {
+func TestEmbeddedEngineCacheLifecycle(t *testing.T) {
 	root := t.TempDir()
-	data := []byte("rx-engine")
-	engine := testEngine(data, root)
-
-	first, err := engine.Resolve(context.Background(), "codex")
-	if err != nil {
-		t.Fatal(err)
-	}
-	second, err := engine.Resolve(context.Background(), "codex")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if first != second {
-		t.Fatalf("cache paths = %q/%q", first, second)
-	}
-	if body, err := os.ReadFile(first); err != nil || !slices.Equal(body, data) {
-		t.Fatalf("cached body/error = %q/%v", body, err)
-	}
-	if err := os.WriteFile(first, []byte("corrupt"), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	repaired, err := engine.Resolve(context.Background(), "codex")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repaired != first {
-		t.Fatalf("repaired path = %q", repaired)
-	}
-	if body, err := os.ReadFile(first); err != nil || !slices.Equal(body, data) {
-		t.Fatalf("repaired body/error = %q/%v", body, err)
+	engine := testEngine([]byte("rx-engine"), root)
+	var cached string
+	for _, step := range []string{"extract", "reuse", "repair", "rollback"} {
+		if step == "repair" {
+			if err := os.WriteFile(cached, []byte("corrupt"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if step == "rollback" {
+			newer := testEngine([]byte("new-rx"), root)
+			path, err := newer.Resolve(t.Context(), "")
+			if err != nil || path == cached {
+				t.Fatalf("new engine path = %q, error = %v", path, err)
+			}
+			for _, retained := range []string{cached, path} {
+				if _, err := os.Stat(retained); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+		path, err := engine.Resolve(t.Context(), "codex")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cached != "" && path != cached {
+			t.Fatalf("cache path = %q, expected %q", path, cached)
+		}
+		cached = path
+		body, err := os.ReadFile(path)
+		if err != nil || !slices.Equal(body, engine.data) {
+			t.Fatalf("cached body = %q, error = %v", body, err)
+		}
 	}
 }
 
@@ -89,35 +94,6 @@ func TestEmbeddedEngineConcurrentExtractionUsesOneDigestPath(t *testing.T) {
 		if path != expected {
 			t.Fatalf("cache path = %q, expected %q", path, expected)
 		}
-	}
-}
-
-func TestEmbeddedEngineKeepsOldDigestForRollback(t *testing.T) {
-	root := t.TempDir()
-	oldEngine := testEngine([]byte("old-rx"), root)
-	newEngine := testEngine([]byte("new-rx"), root)
-	oldPath, err := oldEngine.Resolve(context.Background(), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	newPath, err := newEngine.Resolve(context.Background(), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if oldPath == newPath {
-		t.Fatalf("upgrade reused %q", oldPath)
-	}
-	for _, path := range []string{oldPath, newPath} {
-		if _, err := os.Stat(path); err != nil {
-			t.Fatalf("cached engine %q: %v", path, err)
-		}
-	}
-	rollbackPath, err := oldEngine.Resolve(context.Background(), "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rollbackPath != oldPath {
-		t.Fatalf("rollback path = %q, expected %q", rollbackPath, oldPath)
 	}
 }
 
