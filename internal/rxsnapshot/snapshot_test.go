@@ -8,7 +8,7 @@ import (
 
 func TestSnapshotDetectsArtifactDrift(t *testing.T) {
 	root := t.TempDir()
-	for _, target := range Targets() {
+	for _, target := range targets {
 		path := filepath.Join(root, filepath.FromSlash(target.Path))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
@@ -36,7 +36,7 @@ func TestSnapshotDetectsArtifactDrift(t *testing.T) {
 	if err := snapshot.VerifyFiles(root); err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(root, filepath.FromSlash(Targets()[0].Path))
+	path := filepath.Join(root, filepath.FromSlash(targets[0].Path))
 	if err := os.WriteFile(path, []byte("changed"), 0o700); err != nil {
 		t.Fatal(err)
 	}

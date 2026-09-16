@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/langgenius/tokener-cli/internal/rxsnapshot"
 )
 
 func TestEmbeddedRXMatchesSnapshotAndHostedProtocol(t *testing.T) {
@@ -17,7 +19,7 @@ func TestEmbeddedRXMatchesSnapshotAndHostedProtocol(t *testing.T) {
 	if engine.metadataErr != nil {
 		t.Fatal(engine.metadataErr)
 	}
-	if digest := sha256Hex(engine.data); digest != engine.digest {
+	if digest := rxsnapshot.Digest(engine.data); digest != engine.digest {
 		t.Fatalf("embedded rx SHA-256 = %s", digest)
 	}
 	if len(engine.revision) != 40 {

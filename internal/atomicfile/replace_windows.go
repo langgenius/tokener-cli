@@ -1,6 +1,6 @@
 //go:build windows
 
-package agent
+package atomicfile
 
 import (
 	"os"
@@ -8,11 +8,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func restrictDirectory(string) error {
-	return nil
-}
-
-func replaceFile(source, destination string) error {
+func replace(source, destination string) error {
 	sourcePointer, err := windows.UTF16PtrFromString(source)
 	if err != nil {
 		return err

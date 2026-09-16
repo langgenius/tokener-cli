@@ -26,6 +26,8 @@ skill:
     path: internal/skill-include
     files:
       SKILL.md: replace
+      references/catalog.md: replace
+      references/modules/tokener-ai-console-management-api.md: omit
 
 update:
   github:

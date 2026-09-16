@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/langgenius/tokener-cli/internal/atomicfile"
 	"github.com/lathe-cli/lathe/pkg/config"
 )
 
@@ -15,10 +16,6 @@ type fileBinding struct{}
 
 type bindingDocument struct {
 	Key string `json:"key"`
-}
-
-func newFileBinding() fileBinding {
-	return fileBinding{}
 }
 
 func (binding fileBinding) Load(hostname string) (string, bool, error) {
@@ -33,11 +30,7 @@ func (binding fileBinding) Load(hostname string) (string, bool, error) {
 	if config.NormalizeHostname(hostname) != defaultManagementHostname {
 		return "", false, nil
 	}
-	legacy, err := bindingPath()
-	if err != nil {
-		return "", false, err
-	}
-	return loadBindingFile(legacy)
+	return loadBindingFile(filepath.Join(filepath.Dir(filepath.Dir(path)), "agent-key.json"))
 }
 
 func (binding fileBinding) Save(hostname, key string) error {
@@ -49,39 +42,15 @@ func (binding fileBinding) Save(hostname, key string) error {
 		return err
 	}
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := atomicfile.PrivateDir(dir); err != nil {
 		return fmt.Errorf("create agent config directory: %w", err)
-	}
-	if err := restrictDirectory(dir); err != nil {
-		return err
 	}
 	data, err := json.Marshal(bindingDocument{Key: key})
 	if err != nil {
 		return fmt.Errorf("encode agent key binding: %w", err)
 	}
-	temporary, err := os.CreateTemp(dir, ".agent-key-*.tmp")
-	if err != nil {
-		return fmt.Errorf("create temporary agent key binding: %w", err)
-	}
-	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
-	if err := temporary.Chmod(0o600); err != nil {
-		temporary.Close()
-		return fmt.Errorf("restrict temporary agent key binding: %w", err)
-	}
-	if _, err := temporary.Write(data); err != nil {
-		temporary.Close()
-		return fmt.Errorf("write temporary agent key binding: %w", err)
-	}
-	if err := temporary.Sync(); err != nil {
-		temporary.Close()
-		return fmt.Errorf("sync temporary agent key binding: %w", err)
-	}
-	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("close temporary agent key binding: %w", err)
-	}
-	if err := replaceFile(temporaryPath, path); err != nil {
-		return fmt.Errorf("replace agent key binding: %w", err)
+	if err := atomicfile.Write(path, data, 0o600); err != nil {
+		return fmt.Errorf("write agent key binding: %w", err)
 	}
 	if err := os.Chmod(path, 0o600); err != nil {
 		return fmt.Errorf("restrict agent key binding: %w", err)
@@ -115,20 +84,8 @@ func bindingPathFor(hostname string) (string, error) {
 	return filepath.Join(dir, "agent-keys", bindingFileName(hostname)), nil
 }
 
-func bindingPath() (string, error) {
-	dir, err := configDirectory()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "agent-key.json"), nil
-}
-
 func bindingFileName(hostname string) string {
-	normalized := config.NormalizeHostname(hostname)
-	normalized = strings.ReplaceAll(normalized, "://", "_")
-	normalized = strings.ReplaceAll(normalized, "/", "_")
-	normalized = strings.ReplaceAll(normalized, ":", "_")
-	return normalized + ".json"
+	return strings.NewReplacer("://", "_", "/", "_", ":", "_").Replace(config.NormalizeHostname(hostname)) + ".json"
 }
 
 func configDirectory() (string, error) {

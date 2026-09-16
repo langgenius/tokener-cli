@@ -32,27 +32,15 @@ commands:
         status: STATUS
         updatedAt: UPDATED
       column_formats:
-        availableUsdMicro:
+        availableUsdMicro: &usd_micro
           kind: currency
           currency: USD
           source_scale: 6
           grouping: true
           min_fraction_digits: 2
           max_fraction_digits: 6
-        purchasedAvailableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-        grantedAvailableUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
+        purchasedAvailableUsdMicro: *usd_micro
+        grantedAvailableUsdMicro: *usd_micro
 
   ledger:
     match:
@@ -77,15 +65,9 @@ commands:
         description: DESCRIPTION
         id: ID
       column_formats:
-        amountUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
+        amountUsdMicro: *usd_micro
     params:
-      cursor:
+      cursor: &cursor
         help: Opaque cursor returned by the previous page
       limit:
         help: Number of ledger entries per page (1-100)
@@ -112,22 +94,12 @@ commands:
         id: ID
       column_formats:
         amountCents:
-          kind: currency
-          currency: USD
+          <<: *usd_micro
           source_scale: 2
-          grouping: true
-          min_fraction_digits: 2
           max_fraction_digits: 2
-        creditAmountUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
+        creditAmountUsdMicro: *usd_micro
     params:
-      cursor:
-        help: Opaque cursor returned by the previous page
+      cursor: *cursor
       limit:
         help: Number of purchases per page (1-100)
 
@@ -157,7 +129,7 @@ commands:
     match:
       method: POST
       path: /api/v1/keys
-    body:
+    body: &body_flags
       flags: true
     short: Create an API key
     long: |
@@ -205,20 +177,8 @@ commands:
         lastUsedAt: "LAST USED"
         id: ID
       column_formats:
-        spend30d:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-        limits.maxBudgetUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
+        spend30d: *usd_micro
+        limits.maxBudgetUsdMicro: *usd_micro
 
   reveal:
     match:
@@ -231,12 +191,12 @@ commands:
       output is sensitive and should not be written to logs or shell history.
     notes:
       - The output is a credential. Do not write it to logs or shell history.
-    known_errors:
+    known_errors: &revoked_key_error
       - status: 400
         cause: The key is already revoked.
     example: |
       tokener keys reveal <key-id> -o json
-    params:
+    params: &key_id
       id:
         argument: key-id
         help: API key ID
@@ -249,43 +209,31 @@ commands:
     long: |
       Permanently revokes an API key. A revoked key cannot make model calls or
       have its plaintext secret revealed again.
-    known_errors:
-      - status: 400
-        cause: The key is already revoked.
+    known_errors: *revoked_key_error
     example: |
       tokener keys revoke <key-id> -o json
-    params:
-      id:
-        argument: key-id
-        help: API key ID
+    params: *key_id
 
   set-status:
     match:
       method: POST
       path: /api/v1/keys/{id}/status
-    body:
-      flags: true
+    body: *body_flags
     short: Enable or disable an API key
     long: |
       Sets an API key to active or disabled. The change may remain in a
       preparing state until model-call enforcement converges.
-    known_errors:
-      - status: 400
-        cause: The key is already revoked.
+    known_errors: *revoked_key_error
     example: |
       tokener keys set-status <key-id> --status disabled -o json
       tokener keys set-status <key-id> --status active -o json
-    params:
-      id:
-        argument: key-id
-        help: API key ID
+    params: *key_id
 
   update-limits:
     match:
       method: PATCH
       path: /api/v1/keys/{id}/limits
-    body:
-      flags: true
+    body: *body_flags
     use: replace-limits
     short: Replace all limits for an API key
     long: |
@@ -305,10 +253,7 @@ commands:
         --expires-at 2027-01-01T00:00:00Z \
         --allowed-models gpt-5 \
         -o json
-    params:
-      id:
-        argument: key-id
-        help: API key ID
+    params: *key_id
 
   catalog:
     match:
@@ -368,14 +313,8 @@ commands:
         summary.outputTokens: OUTPUT
         summary.cacheReadInputTokens: "CACHE READ"
       column_formats:
-        summary.spendUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
+        summary.spendUsdMicro: *usd_micro
+    params: &usage_range
       range:
         help: Usage window in days (7 or 30)
 
@@ -401,16 +340,8 @@ commands:
         tokens: TOKENS
         spendUsdMicro: SPEND
       column_formats:
-        spendUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      range:
-        help: Usage window in days (7 or 30)
+        spendUsdMicro: *usd_micro
+    params: *usage_range
 
   breakdown:
     match:
@@ -436,16 +367,8 @@ commands:
         cacheReadInputTokens: "CACHE READ"
         spendUsdMicro: SPEND
       column_formats:
-        spendUsdMicro:
-          kind: currency
-          currency: USD
-          source_scale: 6
-          grouping: true
-          min_fraction_digits: 2
-          max_fraction_digits: 6
-    params:
-      range:
-        help: Usage window in days (7 or 30)
+        spendUsdMicro: *usd_micro
+    params: *usage_range
 
   start-device-login:
     match:

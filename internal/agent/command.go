@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/lathe-cli/lathe/pkg/runtime"
@@ -30,9 +31,9 @@ type keyBinding interface {
 type dependencies struct {
 	engine          engineResolver
 	bindings        keyBinding
-	resolveHostname func(*cobra.Command) (string, string, bool, error)
+	resolveHostname func(*cobra.Command) (string, bool, error)
 	resolveTarget   func(*cobra.Command) (agentTarget, error)
-	createKey       func(context.Context, agentTarget) (string, error)
+	createKey       func(context.Context, string, runtime.ClientOptions) (string, error)
 	launch          func(string, hostRequest, []string, string) error
 	interactive     func() bool
 	stdin           io.Reader
@@ -43,13 +44,11 @@ type dependencies struct {
 func NewCommand() *cobra.Command {
 	return newCommand(dependencies{
 		engine:          newEmbeddedEngine(),
-		bindings:        newFileBinding(),
+		bindings:        fileBinding{},
 		resolveHostname: resolveManagementHostname,
 		resolveTarget:   resolveAgentTarget,
-		createKey: func(ctx context.Context, target agentTarget) (string, error) {
-			return createKeyRequest(ctx, target.Hostname, target.Options)
-		},
-		launch: launchEngine,
+		createKey:       createKeyRequest,
+		launch:          launchEngine,
 		interactive: func() bool {
 			return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stderr.Fd()))
 		},
@@ -63,7 +62,7 @@ func newCommand(deps dependencies) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                "agent [harness] [args...]",
 		Short:              "Run coding agents through the Tokener Gateway",
-		Long:               agentLong(),
+		Long:               "Run coding agents through the Tokener Gateway.\n\nAvailable harnesses: " + strings.Join(harnesses, ", "),
 		DisableFlagParsing: true,
 		Args:               cobra.ArbitraryArgs,
 		SilenceUsage:       true,
@@ -84,10 +83,6 @@ func newCommand(deps dependencies) *cobra.Command {
 	return cmd
 }
 
-func agentLong() string {
-	return "Run coding agents through the Tokener Gateway.\n\nAvailable harnesses: " + strings.Join(harnesses, ", ")
-}
-
 func missingHarness(cmd *cobra.Command, deps dependencies) error {
 	if err := cmd.Usage(); err != nil {
 		return err
@@ -102,101 +97,6 @@ func missingHarness(cmd *cobra.Command, deps dependencies) error {
 		"run `tokener agent --help`",
 		fmt.Errorf("available harnesses: %s", strings.Join(harnesses, ", ")),
 	)
-}
-
-func newKeyCommand(deps dependencies) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "key",
-		Short: "Manage the local Tokener agent key binding",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Help()
-		},
-	}
-	cmd.AddCommand(&cobra.Command{
-		Use:   "login",
-		Short: "Create and bind an agent key when none is configured",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(loginKey(cmd, deps))
-		},
-	})
-	cmd.AddCommand(&cobra.Command{
-		Use:   "regenerate",
-		Short: "Create and bind a new agent key",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(regenerateKey(cmd, deps))
-		},
-	})
-	cmd.AddCommand(&cobra.Command{
-		Use:   "status",
-		Short: "Show the local Tokener agent key binding",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return visibleError(statusKey(cmd, deps))
-		},
-	})
-	return cmd
-}
-
-func statusKey(cmd *cobra.Command, deps dependencies) error {
-	hostname, _, _, err := deps.resolveHostname(cmd)
-	if err != nil {
-		return err
-	}
-	gateway, err := gatewayEndpointFor(hostname)
-	if err != nil {
-		return err
-	}
-	key, exists, err := deps.bindings.Load(hostname)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		_, err = fmt.Fprintf(deps.stdout, "bound: false\nhost: %s\ngateway: %s\n", hostname, gateway)
-		return err
-	}
-	_, err = fmt.Fprintf(deps.stdout, "bound: true\nprefix: %s\nhost: %s\ngateway: %s\n", keyPrefix(key), hostname, gateway)
-	return err
-}
-
-func keyPrefix(key string) string {
-	const visible = 8
-	if len(key) <= visible {
-		return key
-	}
-	return key[:visible]
-}
-
-func loginKey(cmd *cobra.Command, deps dependencies) error {
-	if _, err := deps.engine.Resolve(cmd.Context(), ""); err != nil {
-		return err
-	}
-	target, err := deps.resolveTarget(cmd)
-	if err != nil {
-		return err
-	}
-	noticeCurrentHost(deps.stderr, target.Hostname, target.Ambiguous)
-	if _, exists, err := deps.bindings.Load(target.Hostname); err != nil {
-		return err
-	} else if exists {
-		_, err = fmt.Fprintln(deps.stdout, "Tokener agent key is already bound.")
-		return err
-	}
-	return createAndBind(cmd.Context(), deps, target)
-}
-
-func regenerateKey(cmd *cobra.Command, deps dependencies) error {
-	if _, err := deps.engine.Resolve(cmd.Context(), ""); err != nil {
-		return err
-	}
-	target, err := deps.resolveTarget(cmd)
-	if err != nil {
-		return err
-	}
-	noticeCurrentHost(deps.stderr, target.Hostname, target.Ambiguous)
-	return createAndBind(cmd.Context(), deps, target)
 }
 
 func visibleError(err error) error {
@@ -226,7 +126,7 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 	if len(args) > 0 {
 		harness = args[0]
 		nativeArgs = args[1:]
-		if !knownHarness(harness) {
+		if !slices.Contains(harnesses, harness) {
 			return runtime.NewError(
 				runtime.CodeUsage,
 				runtime.ExitUsage,
@@ -240,7 +140,7 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 	if err != nil {
 		return err
 	}
-	hostname, _, ambiguous, err := deps.resolveHostname(cmd)
+	hostname, ambiguous, err := deps.resolveHostname(cmd)
 	if err != nil {
 		return err
 	}
@@ -249,11 +149,11 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 		return err
 	}
 	noticeCurrentHost(deps.stderr, hostname, ambiguous)
-	key, err := resolveAgentKey(deps.bindings, hostname)
+	key, exists, err := deps.bindings.Load(hostname)
 	if err != nil {
 		return err
 	}
-	if key == "" {
+	if !exists || key == "" {
 		if !deps.interactive() {
 			return errors.New("Tokener agent key is not configured; run `tokener agent key login`")
 		}
@@ -291,35 +191,6 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 		InstallPolicy:    "prompt",
 	}
 	return deps.launch(enginePath, request, nativeArgs, key)
-}
-
-func createAndBind(ctx context.Context, deps dependencies, target agentTarget) error {
-	key, err := deps.createKey(ctx, target)
-	if err != nil {
-		return err
-	}
-	if err := deps.bindings.Save(target.Hostname, key); err != nil {
-		return err
-	}
-	_, err = fmt.Fprintln(deps.stdout, "Tokener agent key created and bound.")
-	return err
-}
-
-func resolveAgentKey(bindings keyBinding, hostname string) (string, error) {
-	key, exists, err := bindings.Load(hostname)
-	if err != nil || !exists {
-		return "", err
-	}
-	return key, nil
-}
-
-func knownHarness(name string) bool {
-	for _, harness := range harnesses {
-		if name == harness {
-			return true
-		}
-	}
-	return false
 }
 
 func confirm(input io.Reader, output io.Writer, message string) (bool, error) {

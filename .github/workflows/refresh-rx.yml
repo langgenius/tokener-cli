@@ -43,31 +43,26 @@ jobs:
           fi
 
           if [[ "$requested_ref" == "main" ]]; then
-            revision=""
             mapfile -t candidates < <(gh api "repos/$RX_REPOSITORY/commits?sha=main&per_page=20" --jq '.[].sha')
-            for candidate in "${candidates[@]}"; do
-              successful_checks=$(gh api "repos/$RX_REPOSITORY/commits/$candidate/check-runs" \
-                -H "Accept: application/vnd.github+json" \
-                --jq '[.check_runs[] | select(.name == "check" and .conclusion == "success")] | length')
-              if [[ "$successful_checks" -gt 0 ]]; then
-                revision="$candidate"
-                break
-              fi
-            done
-            if [[ -z "$revision" ]]; then
-              echo "::error::No green Recall main revision found in the latest 20 commits"
-              exit 1
-            fi
+            failure="No green Recall main revision found in the latest 20 commits"
           else
             encoded_ref=$(jq -rn --arg value "$requested_ref" '$value | @uri')
-            revision=$(gh api "repos/$RX_REPOSITORY/commits/$encoded_ref" --jq '.sha')
-            successful_checks=$(gh api "repos/$RX_REPOSITORY/commits/$revision/check-runs" \
+            candidates=("$(gh api "repos/$RX_REPOSITORY/commits/$encoded_ref" --jq '.sha')")
+            failure="Recall revision ${candidates[0]} has no successful check run"
+          fi
+          revision=""
+          for candidate in "${candidates[@]}"; do
+            successful_checks=$(gh api "repos/$RX_REPOSITORY/commits/$candidate/check-runs" \
               -H "Accept: application/vnd.github+json" \
               --jq '[.check_runs[] | select(.name == "check" and .conclusion == "success")] | length')
-            if [[ "$successful_checks" -eq 0 ]]; then
-              echo "::error::Recall revision $revision has no successful check run"
-              exit 1
+            if [[ "$successful_checks" -gt 0 ]]; then
+              revision="$candidate"
+              break
             fi
+          done
+          if [[ -z "$revision" ]]; then
+            echo "::error::$failure"
+            exit 1
           fi
 
           cargo_toml=$(gh api "repos/$RX_REPOSITORY/contents/Cargo.toml?ref=$revision" --jq '.content' | tr -d '\n' | base64 --decode)
@@ -213,10 +208,9 @@ jobs:
       - name: Install rx snapshot
         run: |
           set -euo pipefail
-          install -m 0755 .local/rx-snapshot/rx internal/agent/assets/rx
-          install -m 0755 .local/rx-snapshot/rx-darwin-amd64 internal/agent/assets/rx-darwin-amd64
-          install -m 0755 .local/rx-snapshot/rx-linux-amd64 internal/agent/assets/rx-linux-amd64
-          install -m 0755 .local/rx-snapshot/rx-windows-amd64.exe internal/agent/assets/rx-windows-amd64.exe
+          for asset in rx rx-darwin-amd64 rx-linux-amd64 rx-windows-amd64.exe; do
+            install -m 0755 ".local/rx-snapshot/$asset" "internal/agent/assets/$asset"
+          done
 
       - name: Write and verify snapshot lock
         env:
@@ -239,14 +233,8 @@ jobs:
         name: Check snapshot changes
         run: |
           set -euo pipefail
-          paths=(
-            internal/agent/assets/rx
-            internal/agent/assets/rx-darwin-amd64
-            internal/agent/assets/rx-linux-amd64
-            internal/agent/assets/rx-windows-amd64.exe
-            internal/agent/rx.lock.json
-          )
-          if git diff --quiet -- "${paths[@]}"; then
+          mapfile -t paths < <(jq -r '.artifacts[].path' internal/agent/rx.lock.json)
+          if git diff --quiet -- "${paths[@]}" internal/agent/rx.lock.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "The embedded rx snapshot already matches ${{ needs.resolve.outputs.revision }}." >> "$GITHUB_STEP_SUMMARY"
           else
@@ -264,13 +252,7 @@ jobs:
         run: |
           set -euo pipefail
           branch="codex/rx-snapshot-$RX_SHORT_REVISION"
-          paths=(
-            internal/agent/assets/rx
-            internal/agent/assets/rx-darwin-amd64
-            internal/agent/assets/rx-linux-amd64
-            internal/agent/assets/rx-windows-amd64.exe
-            internal/agent/rx.lock.json
-          )
+          mapfile -t paths < <(jq -r '.artifacts[].path' internal/agent/rx.lock.json)
           if git ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
             echo "::error::Remote branch $branch already exists"
             exit 1
@@ -278,7 +260,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git switch -c "$branch"
-          git add -- "${paths[@]}"
+          git add -- "${paths[@]}" internal/agent/rx.lock.json
           git commit -s -m "build(agent): embed rx snapshot $RX_SHORT_REVISION"
           git push origin "$branch"
           pr_url=$(gh pr create \
