@@ -83,8 +83,28 @@ make check       # cli-sync + tests + go vet
 make release-snapshot # build release artifacts without publishing
 ```
 
-`make cli-sync` runs the pinned `lathe` generator via `go run`; override the
-version with `make cli-sync LATHE_VERSION=vX.Y.Z`.
+`make cli-sync` runs the pinned `lathe` generator via `go run`, reading the
+version from `go.mod`; override it with `make cli-sync LATHE_VERSION=vX.Y.Z`.
+
+## Dependency updates
+
+```sh
+make rx-update RX_TAG=v0.6.1   # repin the embedded engines to a Recall release
+make lathe-update              # move lathe to its latest version and regenerate
+make lathe-update LATHE_REF=v0.6.2
+```
+
+`make rx-update` downloads the four `recall-*` archives of that release, keeps
+only their `rx` member, rewrites `internal/agent/rx.lock.json` with the tag's
+commit and the new checksums, and verifies the result. All four engines come
+from one release build, so every platform ships the same revision; commit the
+assets and the lock together. `refresh-rx.yml` stays the path for pinning an
+unreleased Recall commit, building the four engines itself and opening the
+snapshot PR.
+
+`make lathe-update` moves the pin in `go.mod`, the single source for
+`LATHE_VERSION`, then re-runs `make cli-sync` so the generated output matches
+the new generator.
 
 ## Generated output
 

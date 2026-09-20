@@ -124,6 +124,15 @@ func (snapshot Snapshot) Artifact(goos, goarch string) (Artifact, bool) {
 	return artifact, ok
 }
 
+func Path(key string) (string, bool) {
+	for _, target := range targets {
+		if target.Key == key {
+			return target.Path, true
+		}
+	}
+	return "", false
+}
+
 func (snapshot Snapshot) VerifyFiles(root string) error {
 	if err := snapshot.Validate(); err != nil {
 		return err
