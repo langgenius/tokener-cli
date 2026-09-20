@@ -28,6 +28,12 @@ flowchart LR
 
 `host.go` resolves the management host and its gateway. Agent keys stay in
 per-host config files; only the default host reads the legacy `agent-key.json`.
+`machine.go` derives a per-machine key name, `Tokener Agent CLI · <host>-<id>`,
+where the id is a six-character digest of the platform machine identifier; only
+the digest is sent. Because key names are unique per organization, that name is
+what lets one organization hold one key per machine. `key login` claims the key
+carrying this machine's name when it already exists and creates one otherwise,
+so it is safe to rerun; `key regenerate` revokes that key and issues a new one.
 `atomicfile` owns temporary-file writes and platform-specific replacement for
 bindings, cached engines, and the snapshot lock. Engine extraction verifies
 SHA-256, retains old digest directories for rollback, and validates `TOKENER_RX`

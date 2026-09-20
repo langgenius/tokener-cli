@@ -14,27 +14,33 @@ import (
 
 type fileBinding struct{}
 
-type bindingDocument struct {
-	Key string `json:"key"`
+// agentBinding is the locally stored description of this machine's agent key.
+// KeyID, Name and MachineID are absent in bindings written before per-machine
+// key names existed; callers must tolerate empty values.
+type agentBinding struct {
+	Key       string `json:"key"`
+	KeyID     string `json:"keyId,omitempty"`
+	Name      string `json:"name,omitempty"`
+	MachineID string `json:"machineId,omitempty"`
 }
 
-func (binding fileBinding) Load(hostname string) (string, bool, error) {
+func (binding fileBinding) Load(hostname string) (agentBinding, bool, error) {
 	path, err := bindingPathFor(hostname)
 	if err != nil {
-		return "", false, err
+		return agentBinding{}, false, err
 	}
-	key, exists, err := loadBindingFile(path)
+	stored, exists, err := loadBindingFile(path)
 	if err != nil || exists {
-		return key, exists, err
+		return stored, exists, err
 	}
 	if config.NormalizeHostname(hostname) != defaultManagementHostname {
-		return "", false, nil
+		return agentBinding{}, false, nil
 	}
 	return loadBindingFile(filepath.Join(filepath.Dir(filepath.Dir(path)), "agent-key.json"))
 }
 
-func (binding fileBinding) Save(hostname, key string) error {
-	if key == "" {
+func (binding fileBinding) Save(hostname string, stored agentBinding) error {
+	if strings.TrimSpace(stored.Key) == "" {
 		return errors.New("agent key is empty")
 	}
 	path, err := bindingPathFor(hostname)
@@ -45,7 +51,7 @@ func (binding fileBinding) Save(hostname, key string) error {
 	if err := atomicfile.PrivateDir(dir); err != nil {
 		return fmt.Errorf("create agent config directory: %w", err)
 	}
-	data, err := json.Marshal(bindingDocument{Key: key})
+	data, err := json.Marshal(stored)
 	if err != nil {
 		return fmt.Errorf("encode agent key binding: %w", err)
 	}
@@ -58,22 +64,22 @@ func (binding fileBinding) Save(hostname, key string) error {
 	return nil
 }
 
-func loadBindingFile(path string) (string, bool, error) {
+func loadBindingFile(path string) (agentBinding, bool, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		return "", false, nil
+		return agentBinding{}, false, nil
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("read agent key binding: %w", err)
+		return agentBinding{}, false, fmt.Errorf("read agent key binding: %w", err)
 	}
-	var document bindingDocument
+	var document agentBinding
 	if err := json.Unmarshal(data, &document); err != nil {
-		return "", false, fmt.Errorf("parse agent key binding: %w", err)
+		return agentBinding{}, false, fmt.Errorf("parse agent key binding: %w", err)
 	}
 	if strings.TrimSpace(document.Key) == "" {
-		return "", false, errors.New("agent key binding is empty")
+		return agentBinding{}, false, errors.New("agent key binding is empty")
 	}
-	return document.Key, true, nil
+	return document, true, nil
 }
 
 func bindingPathFor(hostname string) (string, error) {
