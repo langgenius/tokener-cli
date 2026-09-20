@@ -1,7 +1,9 @@
-LATHE_VERSION ?= v0.6.1-0.20260830125839-443259bc5247
+LATHE_MODULE ?= github.com/lathe-cli/lathe
+LATHE_VERSION ?= $(shell go list -m -f '{{.Version}}' $(LATHE_MODULE))
+LATHE_REF ?= latest
 INSTALL_DIR ?= $(HOME)/.local/bin
 
-.PHONY: cli-sync cli-build cli-install rx-verify test check ci-check release-snapshot
+.PHONY: cli-sync cli-build cli-install rx-verify rx-update lathe-update test check ci-check release-snapshot
 
 cli-sync:
 	cp cli.yaml cmd/tokener/cli.yaml
@@ -17,6 +19,16 @@ cli-install: cli-build
 
 rx-verify:
 	go run ./internal/cmd/rxmanifest verify
+
+rx-update:
+	@test -n "$(RX_TAG)" || { echo "RX_TAG is required: make rx-update RX_TAG=v0.6.1"; exit 1; }
+	go run ./internal/cmd/rxmanifest pull -tag "$(RX_TAG)"
+	go test ./internal/agent/...
+
+lathe-update:
+	go get $(LATHE_MODULE)@$(LATHE_REF)
+	go mod tidy
+	$(MAKE) cli-sync
 
 test: rx-verify cli-build
 	go test ./...

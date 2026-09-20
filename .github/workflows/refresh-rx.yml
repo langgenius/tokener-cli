@@ -196,7 +196,7 @@ jobs:
           for host_file in "${host_files[@]}"; do
             jq -e --arg version "$RX_VERSION" '
               .protocol.major == 1 and
-              .protocol.minor == 0 and
+              .protocol.minor >= 0 and
               .version == $version and
               ((.harnesses | sort) == (["claude", "codex", "dsh", "kimi", "opencode", "pi"] | sort))
             ' "$host_file" > /dev/null
