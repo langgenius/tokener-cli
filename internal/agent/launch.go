@@ -11,7 +11,10 @@ import (
 	"strings"
 )
 
-const requestEnvironment = "RX_HOST_REQUEST"
+const (
+	requestEnvironment      = "RX_HOST_REQUEST"
+	claudeExperimentalBetas = "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS"
+)
 
 type hostRequest struct {
 	Harness          string         `json:"harness,omitempty"`
@@ -85,8 +88,13 @@ func launchSpec(request hostRequest, nativeArgs []string, key string, baseEnviro
 	}
 	args := []string{"host", "--"}
 	args = append(args, nativeArgs...)
-	environment := environmentWithout(baseEnvironment, requestEnvironment, credentialEnv)
-	environment = append(environment, requestEnvironment+"="+string(payload), credentialEnv+"="+key)
+	environment := environmentWithout(baseEnvironment, requestEnvironment, credentialEnv, claudeExperimentalBetas)
+	environment = append(
+		environment,
+		requestEnvironment+"="+string(payload),
+		credentialEnv+"="+key,
+		claudeExperimentalBetas+"=1",
+	)
 	return args, environment, nil
 }
 
