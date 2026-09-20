@@ -116,9 +116,8 @@ func TestLaunchSpecKeepsKeyOutOfRequestAndArguments(t *testing.T) {
 			Endpoint:      defaultGatewayEndpoint,
 			CredentialEnv: credentialEnv,
 		},
-		StateDir:         filepath.Join(t.TempDir(), "state"),
-		PermissionPolicy: "standard",
-		InstallPolicy:    "prompt",
+		StateDir:      filepath.Join(t.TempDir(), "state"),
+		InstallPolicy: "prompt",
 	}
 	args, environment, err := launchSpec(
 		request,

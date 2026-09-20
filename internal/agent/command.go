@@ -186,9 +186,8 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 			Endpoint:      gateway,
 			CredentialEnv: credentialEnv,
 		},
-		StateDir:         stateDir,
-		PermissionPolicy: "standard",
-		InstallPolicy:    "prompt",
+		StateDir:      stateDir,
+		InstallPolicy: "prompt",
 	}
 	return deps.launch(enginePath, request, nativeArgs, key)
 }

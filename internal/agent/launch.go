@@ -17,11 +17,10 @@ const (
 )
 
 type hostRequest struct {
-	Harness          string         `json:"harness,omitempty"`
-	Gateway          gatewayProfile `json:"gateway"`
-	StateDir         string         `json:"state_dir"`
-	PermissionPolicy string         `json:"permission_policy"`
-	InstallPolicy    string         `json:"install_policy"`
+	Harness       string         `json:"harness,omitempty"`
+	Gateway       gatewayProfile `json:"gateway"`
+	StateDir      string         `json:"state_dir"`
+	InstallPolicy string         `json:"install_policy"`
 }
 
 type gatewayProfile struct {

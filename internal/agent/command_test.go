@@ -119,7 +119,7 @@ func TestAgentLaunch(t *testing.T) {
 			if fixture.binding.loadHost != test.hostname || fixture.request.Harness != harness || fixture.request.Gateway.Endpoint != test.gateway || fixture.request.Gateway.ProviderID != "tokener" {
 				t.Fatalf("host/request = %s/%#v", fixture.binding.loadHost, fixture.request)
 			}
-			if fixture.request.PermissionPolicy != "standard" || fixture.request.InstallPolicy != "prompt" || !slices.Equal(fixture.args, nativeArgs) {
+			if fixture.request.InstallPolicy != "prompt" || !slices.Equal(fixture.args, nativeArgs) {
 				t.Fatalf("request/arguments = %#v/%v", fixture.request, fixture.args)
 			}
 		})
