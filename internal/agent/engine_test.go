@@ -124,7 +124,7 @@ func TestLaunchSpecKeepsKeyOutOfRequestAndArguments(t *testing.T) {
 		request,
 		[]string{"--resume", "session-1"},
 		"gateway-secret",
-		[]string{"PATH=/bin", requestEnvironment + "=old", credentialEnv + "=old"},
+		[]string{"PATH=/bin", requestEnvironment + "=old", credentialEnv + "=old", claudeExperimentalBetas + "=0"},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -136,6 +136,7 @@ func TestLaunchSpecKeepsKeyOutOfRequestAndArguments(t *testing.T) {
 		t.Fatalf("key leaked into args: %v", args)
 	}
 	var payload string
+	var sawBetas bool
 	for _, entry := range environment {
 		name, value, _ := strings.Cut(entry, "=")
 		switch name {
@@ -145,7 +146,15 @@ func TestLaunchSpecKeepsKeyOutOfRequestAndArguments(t *testing.T) {
 			if value != "gateway-secret" {
 				t.Fatalf("credential environment = %q", value)
 			}
+		case claudeExperimentalBetas:
+			sawBetas = true
+			if value != "1" {
+				t.Fatalf("claude experimental betas = %q", value)
+			}
 		}
+	}
+	if !sawBetas {
+		t.Fatal("missing CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS")
 	}
 	if payload == "" || strings.Contains(payload, "gateway-secret") {
 		t.Fatalf("request payload = %q", payload)
