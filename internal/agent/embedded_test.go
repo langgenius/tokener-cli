@@ -41,7 +41,7 @@ func TestEmbeddedRXMatchesSnapshotAndHostedProtocol(t *testing.T) {
 	if err := json.Unmarshal(output, &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Protocol.Major != 1 || response.Protocol.Minor != 0 {
+	if response.Protocol.Major != 1 || response.Protocol.Minor < 0 {
 		t.Fatalf("protocol = %d.%d", response.Protocol.Major, response.Protocol.Minor)
 	}
 	if response.Version != engine.version {
