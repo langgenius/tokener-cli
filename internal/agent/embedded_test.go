@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/langgenius/tokener-cli/internal/rxsnapshot"
@@ -33,7 +34,11 @@ func TestEmbeddedRXMatchesSnapshotAndHostedProtocol(t *testing.T) {
 	if err := os.WriteFile(path, engine.data, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	output, err := exec.Command(path, "host").Output()
+	command := exec.Command(path, "host")
+	command.Env = slices.DeleteFunc(os.Environ(), func(entry string) bool {
+		return strings.HasPrefix(entry, "RX_HOST_REQUEST=")
+	})
+	output, err := command.Output()
 	if err != nil {
 		t.Fatal(err)
 	}
