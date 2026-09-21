@@ -21,8 +21,7 @@ Use `tokener commands --json` for the full API index and `references/catalog.md`
 ## Agent
 
 - `tokener agent [<harness>]`: launch through the Tokener Gateway. Interactive terminals may omit the harness; scripts must pass one of: claude, codex, opencode, pi, dsh, kimi.
-- `tokener agent key login` and `tokener agent key status`: bind or inspect the local agent key. Login binds one key per machine, named `Tokener Agent CLI · <hostname>-<id>`, and is safe to rerun: it reuses this machine's existing key instead of creating another. Status does not create or rotate a key.
-- `tokener agent key regenerate`: revoke this machine's agent key and bind a fresh one. Use it to rotate a secret, or to recover when a name collision blocks login.
+- `tokener agent key login` and `tokener agent key status`: bind or inspect the local agent key. Status does not create or rotate a key.
 
 ## Keys
 
