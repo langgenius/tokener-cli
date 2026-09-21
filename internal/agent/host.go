@@ -116,3 +116,5 @@ func hasCredential(entry config.HostEntry) bool {
 		return false
 	}
 }
+
+// this comment should be rejected
