@@ -3,7 +3,7 @@ LATHE_VERSION ?= $(shell go list -m -f '{{.Version}}' $(LATHE_MODULE))
 LATHE_REF ?= latest
 INSTALL_DIR ?= $(HOME)/.local/bin
 
-.PHONY: cli-sync cli-build cli-install rx-verify rx-update lathe-update test check ci-check release-snapshot
+.PHONY: cli-sync cli-build cli-install rx-verify rx-update lathe-update test check ci-check lint release-snapshot
 
 cli-sync:
 	cp cli.yaml cmd/tokener/cli.yaml
@@ -43,3 +43,6 @@ ci-check: rx-verify
 
 release-snapshot: rx-verify
 	goreleaser release --snapshot --clean
+
+lint:
+	golangci-lint run
