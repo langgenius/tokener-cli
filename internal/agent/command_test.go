@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net/http"
 	"slices"
 	"strings"
 	"testing"
@@ -24,22 +25,22 @@ func (engine *fakeEngine) Resolve(_ context.Context, harness string) (string, er
 }
 
 type fakeBinding struct {
-	key      string
+	document bindingDocument
 	exists   bool
 	err      error
-	saved    []string
+	saved    []bindingDocument
 	hosts    []string
 	loadHost string
 }
 
-func (binding *fakeBinding) Load(hostname string) (string, bool, error) {
+func (binding *fakeBinding) Load(hostname string) (bindingDocument, bool, error) {
 	binding.loadHost = hostname
-	return binding.key, binding.exists, binding.err
+	return binding.document, binding.exists, binding.err
 }
 
-func (binding *fakeBinding) Save(hostname, key string) error {
+func (binding *fakeBinding) Save(hostname string, document bindingDocument) error {
 	binding.hosts = append(binding.hosts, hostname)
-	binding.saved = append(binding.saved, key)
+	binding.saved = append(binding.saved, document)
 	return binding.err
 }
 
@@ -53,12 +54,14 @@ type agentFixture struct {
 	path, key string
 	args      []string
 	created   int
+	calls     []string
+	revokeErr error
 }
 
 func newAgentFixture(t *testing.T) *agentFixture {
 	t.Helper()
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	fixture := &agentFixture{engine: fakeEngine{path: "/engine/rx"}, binding: fakeBinding{key: "bound-key", exists: true}}
+	fixture := &agentFixture{engine: fakeEngine{path: "/engine/rx"}, binding: fakeBinding{document: bindingDocument{Key: "bound-key", KeyID: "bound-id"}, exists: true}}
 	fixture.dependencies = dependencies{
 		engine:   &fixture.engine,
 		bindings: &fixture.binding,
@@ -68,9 +71,14 @@ func newAgentFixture(t *testing.T) *agentFixture {
 		resolveTarget: func(*cobra.Command) (agentTarget, error) {
 			return agentTarget{Hostname: defaultManagementHostname}, nil
 		},
-		createKey: func(context.Context, string, runtime.ClientOptions) (string, error) {
+		createKey: func(context.Context, string, runtime.ClientOptions) (createdKey, error) {
 			fixture.created++
-			return "created-key", nil
+			fixture.calls = append(fixture.calls, "create")
+			return createdKey{ID: "created-id", Key: "created-key"}, nil
+		},
+		revokeKey: func(_ context.Context, _, id string, _ runtime.ClientOptions) error {
+			fixture.calls = append(fixture.calls, "revoke:"+id)
+			return fixture.revokeErr
 		},
 		launch: func(path string, request hostRequest, args []string, key string) error {
 			fixture.path, fixture.request, fixture.args, fixture.key = path, request, slices.Clone(args), key
@@ -169,7 +177,7 @@ func TestInteractiveMissingKeyCreatesBindingAndExits(t *testing.T) {
 	if err := fixture.execute("pi"); err != nil {
 		t.Fatal(err)
 	}
-	if fixture.created != 1 || !slices.Equal(fixture.binding.saved, []string{"created-key"}) || !slices.Equal(fixture.binding.hosts, []string{defaultManagementHostname}) || fixture.path != "" {
+	if fixture.created != 1 || !slices.Equal(fixture.binding.saved, []bindingDocument{{Key: "created-key", KeyID: "created-id"}}) || !slices.Equal(fixture.binding.hosts, []string{defaultManagementHostname}) || fixture.path != "" {
 		t.Fatalf("created/binding/launch = %d/%#v/%q", fixture.created, fixture.binding, fixture.path)
 	}
 	if output := fixture.output.String(); !strings.Contains(output, "created and bound") || !strings.Contains(output, "Run the command again") {
@@ -180,7 +188,7 @@ func TestInteractiveMissingKeyCreatesBindingAndExits(t *testing.T) {
 func TestKeyStatusDoesNotMutateOrRevealKey(t *testing.T) {
 	for _, key := range []string{"", "sk-abcdefghijklmnopqrstuvwxyz"} {
 		fixture := newAgentFixture(t)
-		fixture.binding = fakeBinding{key: key, exists: key != ""}
+		fixture.binding = fakeBinding{document: bindingDocument{Key: key}, exists: key != ""}
 		if err := fixture.execute("key", "status"); err != nil {
 			t.Fatal(err)
 		}
@@ -228,8 +236,44 @@ func TestKeyCommandsPreserveExistingBindingUnlessRegenerated(t *testing.T) {
 		if fixture.created != test.created || !slices.Equal(fixture.engine.calls, []string{""}) {
 			t.Fatalf("%#v: created/engine = %d/%v", test, fixture.created, fixture.engine.calls)
 		}
-		if test.created != 0 && (!slices.Equal(fixture.binding.saved, []string{"created-key"}) || !slices.Equal(fixture.binding.hosts, []string{defaultManagementHostname})) {
+		if test.created != 0 && (!slices.Equal(fixture.binding.saved, []bindingDocument{{Key: "created-key", KeyID: "created-id"}}) || !slices.Equal(fixture.binding.hosts, []string{defaultManagementHostname})) {
 			t.Fatalf("%#v: binding = %#v", test, fixture.binding)
 		}
+	}
+}
+
+func TestKeyRegenerateRevokesBoundKeyBeforeCreating(t *testing.T) {
+	alreadyRevoked := &runtime.HTTPError{
+		Status: http.StatusBadRequest,
+		Body:   []byte(`{"error":"api_key_revoked"}`),
+	}
+	for _, test := range []struct {
+		name      string
+		document  bindingDocument
+		revokeErr error
+		calls     []string
+		wantErr   bool
+		notice    string
+	}{
+		{"bound key", bindingDocument{Key: "old-key", KeyID: "old-id"}, nil, []string{"revoke:old-id", "create"}, false, ""},
+		{"already revoked", bindingDocument{Key: "old-key", KeyID: "old-id"}, alreadyRevoked, []string{"revoke:old-id", "create"}, false, ""},
+		{"revoke fails", bindingDocument{Key: "old-key", KeyID: "old-id"}, errors.New("boom"), []string{"revoke:old-id"}, true, ""},
+		{"binding without id", bindingDocument{Key: "old-key"}, nil, []string{"create"}, false, "tokener keys revoke"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newAgentFixture(t)
+			fixture.binding.document = test.document
+			fixture.revokeErr = test.revokeErr
+			err := fixture.execute("key", "regenerate")
+			if (err != nil) != test.wantErr || !slices.Equal(fixture.calls, test.calls) {
+				t.Fatalf("error/calls = %v/%v", err, fixture.calls)
+			}
+			if test.wantErr && len(fixture.binding.saved) != 0 {
+				t.Fatalf("binding saved after failed revoke: %#v", fixture.binding.saved)
+			}
+			if !strings.Contains(fixture.errors.String(), test.notice) {
+				t.Fatalf("stderr = %q", fixture.errors.String())
+			}
+		})
 	}
 }

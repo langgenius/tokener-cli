@@ -27,19 +27,19 @@ func TestFileBindingSavesLoadsAndReplacesAtomically(t *testing.T) {
 	binding := fileBinding{}
 	hostname := "console-staging.tokener.dev"
 
-	if err := binding.Save(hostname, "first-key"); err != nil {
+	if err := binding.Save(hostname, bindingDocument{Key: "first-key", KeyID: "key-1"}); err != nil {
 		t.Fatal(err)
 	}
-	key, exists, err := binding.Load(hostname)
-	if err != nil || !exists || key != "first-key" {
-		t.Fatalf("load first key = %q/%t/%v", key, exists, err)
+	document, exists, err := binding.Load(hostname)
+	if err != nil || !exists || document != (bindingDocument{Key: "first-key", KeyID: "key-1"}) {
+		t.Fatalf("load first key = %#v/%t/%v", document, exists, err)
 	}
-	if err := binding.Save(hostname, "second-key"); err != nil {
+	if err := binding.Save(hostname, bindingDocument{Key: "second-key", KeyID: "key-2"}); err != nil {
 		t.Fatal(err)
 	}
-	key, exists, err = binding.Load(hostname)
-	if err != nil || !exists || key != "second-key" {
-		t.Fatalf("load second key = %q/%t/%v", key, exists, err)
+	document, exists, err = binding.Load(hostname)
+	if err != nil || !exists || document != (bindingDocument{Key: "second-key", KeyID: "key-2"}) {
+		t.Fatalf("load second key = %#v/%t/%v", document, exists, err)
 	}
 	path, err := bindingPathFor(hostname)
 	if err != nil {
@@ -59,19 +59,19 @@ func TestFileBindingSavesLoadsAndReplacesAtomically(t *testing.T) {
 func TestFileBindingIsolatesHostsAndFallsBackToLegacyDefault(t *testing.T) {
 	dir := bindAgentTestManifest(t)
 	binding := fileBinding{}
-	if err := binding.Save("console.tokener.dev", "prod-key"); err != nil {
+	if err := binding.Save("console.tokener.dev", bindingDocument{Key: "prod-key"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := binding.Save("http://localhost:3000", "local-key"); err != nil {
+	if err := binding.Save("http://localhost:3000", bindingDocument{Key: "local-key"}); err != nil {
 		t.Fatal(err)
 	}
-	key, exists, err := binding.Load("console.tokener.dev")
-	if err != nil || !exists || key != "prod-key" {
-		t.Fatalf("prod key = %q/%t/%v", key, exists, err)
+	document, exists, err := binding.Load("console.tokener.dev")
+	if err != nil || !exists || document.Key != "prod-key" {
+		t.Fatalf("prod key = %#v/%t/%v", document, exists, err)
 	}
-	key, exists, err = binding.Load("http://localhost:3000")
-	if err != nil || !exists || key != "local-key" {
-		t.Fatalf("local key = %q/%t/%v", key, exists, err)
+	document, exists, err = binding.Load("http://localhost:3000")
+	if err != nil || !exists || document.Key != "local-key" {
+		t.Fatalf("local key = %#v/%t/%v", document, exists, err)
 	}
 
 	legacy := filepath.Join(dir, "agent-key.json")
@@ -82,20 +82,20 @@ func TestFileBindingIsolatesHostsAndFallsBackToLegacyDefault(t *testing.T) {
 	if err := os.RemoveAll(filepath.Join(dir, "agent-keys")); err != nil {
 		t.Fatal(err)
 	}
-	key, exists, err = isolated.Load(defaultManagementHostname)
-	if err != nil || !exists || key != "legacy-key" {
-		t.Fatalf("legacy fallback = %q/%t/%v", key, exists, err)
+	document, exists, err = isolated.Load(defaultManagementHostname)
+	if err != nil || !exists || document != (bindingDocument{Key: "legacy-key"}) {
+		t.Fatalf("legacy fallback = %#v/%t/%v", document, exists, err)
 	}
-	key, exists, err = isolated.Load("console-staging.tokener.dev")
-	if err != nil || exists || key != "" {
-		t.Fatalf("staging should not use legacy = %q/%t/%v", key, exists, err)
+	document, exists, err = isolated.Load("console-staging.tokener.dev")
+	if err != nil || exists || document.Key != "" {
+		t.Fatalf("staging should not use legacy = %#v/%t/%v", document, exists, err)
 	}
 }
 
 func TestFileBindingRejectsEmptyAndMalformedDocuments(t *testing.T) {
 	bindAgentTestManifest(t)
 	binding := fileBinding{}
-	if err := binding.Save(defaultManagementHostname, ""); err == nil {
+	if err := binding.Save(defaultManagementHostname, bindingDocument{}); err == nil {
 		t.Fatal("empty key was accepted")
 	}
 	path, err := bindingPathFor(defaultManagementHostname)

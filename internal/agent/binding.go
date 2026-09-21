@@ -15,26 +15,27 @@ import (
 type fileBinding struct{}
 
 type bindingDocument struct {
-	Key string `json:"key"`
+	Key   string `json:"key"`
+	KeyID string `json:"keyId,omitempty"`
 }
 
-func (binding fileBinding) Load(hostname string) (string, bool, error) {
+func (binding fileBinding) Load(hostname string) (bindingDocument, bool, error) {
 	path, err := bindingPathFor(hostname)
 	if err != nil {
-		return "", false, err
+		return bindingDocument{}, false, err
 	}
-	key, exists, err := loadBindingFile(path)
+	document, exists, err := loadBindingFile(path)
 	if err != nil || exists {
-		return key, exists, err
+		return document, exists, err
 	}
 	if config.NormalizeHostname(hostname) != defaultManagementHostname {
-		return "", false, nil
+		return bindingDocument{}, false, nil
 	}
 	return loadBindingFile(filepath.Join(filepath.Dir(filepath.Dir(path)), "agent-key.json"))
 }
 
-func (binding fileBinding) Save(hostname, key string) error {
-	if key == "" {
+func (binding fileBinding) Save(hostname string, document bindingDocument) error {
+	if document.Key == "" {
 		return errors.New("agent key is empty")
 	}
 	path, err := bindingPathFor(hostname)
@@ -45,7 +46,7 @@ func (binding fileBinding) Save(hostname, key string) error {
 	if err := atomicfile.PrivateDir(dir); err != nil {
 		return fmt.Errorf("create agent config directory: %w", err)
 	}
-	data, err := json.Marshal(bindingDocument{Key: key})
+	data, err := json.Marshal(document)
 	if err != nil {
 		return fmt.Errorf("encode agent key binding: %w", err)
 	}
@@ -58,22 +59,22 @@ func (binding fileBinding) Save(hostname, key string) error {
 	return nil
 }
 
-func loadBindingFile(path string) (string, bool, error) {
+func loadBindingFile(path string) (bindingDocument, bool, error) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		return "", false, nil
+		return bindingDocument{}, false, nil
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("read agent key binding: %w", err)
+		return bindingDocument{}, false, fmt.Errorf("read agent key binding: %w", err)
 	}
 	var document bindingDocument
 	if err := json.Unmarshal(data, &document); err != nil {
-		return "", false, fmt.Errorf("parse agent key binding: %w", err)
+		return bindingDocument{}, false, fmt.Errorf("parse agent key binding: %w", err)
 	}
 	if strings.TrimSpace(document.Key) == "" {
-		return "", false, errors.New("agent key binding is empty")
+		return bindingDocument{}, false, errors.New("agent key binding is empty")
 	}
-	return document.Key, true, nil
+	return document, true, nil
 }
 
 func bindingPathFor(hostname string) (string, error) {

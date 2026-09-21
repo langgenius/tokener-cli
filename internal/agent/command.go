@@ -24,8 +24,8 @@ type engineResolver interface {
 }
 
 type keyBinding interface {
-	Load(hostname string) (string, bool, error)
-	Save(hostname, key string) error
+	Load(hostname string) (bindingDocument, bool, error)
+	Save(hostname string, document bindingDocument) error
 }
 
 type dependencies struct {
@@ -33,7 +33,8 @@ type dependencies struct {
 	bindings        keyBinding
 	resolveHostname func(*cobra.Command) (string, bool, error)
 	resolveTarget   func(*cobra.Command) (agentTarget, error)
-	createKey       func(context.Context, string, runtime.ClientOptions) (string, error)
+	createKey       func(context.Context, string, runtime.ClientOptions) (createdKey, error)
+	revokeKey       func(context.Context, string, string, runtime.ClientOptions) error
 	launch          func(string, hostRequest, []string, string) error
 	interactive     func() bool
 	stdin           io.Reader
@@ -48,6 +49,7 @@ func NewCommand() *cobra.Command {
 		resolveHostname: resolveManagementHostname,
 		resolveTarget:   resolveAgentTarget,
 		createKey:       createKeyRequest,
+		revokeKey:       revokeKeyRequest,
 		launch:          launchEngine,
 		interactive: func() bool {
 			return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) && term.IsTerminal(int(os.Stderr.Fd()))
@@ -149,11 +151,11 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 		return err
 	}
 	noticeCurrentHost(deps.stderr, hostname, ambiguous)
-	key, exists, err := deps.bindings.Load(hostname)
+	document, exists, err := deps.bindings.Load(hostname)
 	if err != nil {
 		return err
 	}
-	if !exists || key == "" {
+	if !exists || document.Key == "" {
 		if !deps.interactive() {
 			return errors.New("Tokener agent key is not configured; run `tokener agent key login`")
 		}
@@ -189,7 +191,7 @@ func runAgent(cmd *cobra.Command, deps dependencies, args []string) error {
 		StateDir:      stateDir,
 		InstallPolicy: "prompt",
 	}
-	return deps.launch(enginePath, request, nativeArgs, key)
+	return deps.launch(enginePath, request, nativeArgs, document.Key)
 }
 
 func confirm(input io.Reader, output io.Writer, message string) (bool, error) {
