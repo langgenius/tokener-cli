@@ -21,7 +21,7 @@ rx-verify:
 	go run ./internal/cmd/rxmanifest verify
 
 rx-update:
-	@test -n "$(RX_TAG)" || { echo "RX_TAG is required: make rx-update RX_TAG=v0.6.1"; exit 1; }
+	@test -n "$(RX_TAG)" || { echo "RX_TAG is required: make rx-update RX_TAG=v0.1.0"; exit 1; }
 	go run ./internal/cmd/rxmanifest pull -tag "$(RX_TAG)"
 	go test ./internal/agent/...
 

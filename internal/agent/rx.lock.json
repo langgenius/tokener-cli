@@ -1,31 +1,31 @@
 {
   "schema": 1,
   "source": {
-    "repository": "samzong/Recall",
-    "ref": "v0.6.2",
-    "revision": "7d08b9eb746fa8de027fd87b24c9e5ea2ea82aed",
-    "version": "0.6.2"
+    "repository": "samzong/rx",
+    "ref": "v0.1.0",
+    "revision": "00dd406d10f564bf810cafc2ad20c5fa6687cf92",
+    "version": "0.1.0"
   },
   "build": {
     "rust_toolchain": "stable",
-    "provenance": "https://github.com/samzong/Recall/releases/tag/v0.6.2"
+    "provenance": "https://github.com/samzong/rx/releases/tag/v0.1.0"
   },
   "artifacts": {
     "darwin/amd64": {
       "path": "internal/agent/assets/rx-darwin-amd64",
-      "sha256": "4b2d344114d144dafa488f134615d1130f089e3547f1950fcc6ed1874261ecd9"
+      "sha256": "bd0c0e6038fc77fa7aa47a8b0291bb34b2775665efb35937f5fb805f7c2db9ac"
     },
     "darwin/arm64": {
       "path": "internal/agent/assets/rx",
-      "sha256": "0b4faeea11727e922d6292c4c773cd0e63df488d902e7eceb646a1029510e35a"
+      "sha256": "07ec3ad5b0ac490f8461a7af347ebe16c8609dd2835e8c4a617f979c275911b3"
     },
     "linux/amd64": {
       "path": "internal/agent/assets/rx-linux-amd64",
-      "sha256": "f46d27481b5077e984c85d601d6008a819c9113d04edb22761be3b6c42cd4d27"
+      "sha256": "9d261903fc9f9bc1aa252ce7c37aa27e704eca59bcd3908454d849b2ad9b61e9"
     },
     "windows/amd64": {
       "path": "internal/agent/assets/rx-windows-amd64.exe",
-      "sha256": "203325b610ac4c1ab42bcfd61e4c36cc7e1721e224388461228e1ebe7a3aef54"
+      "sha256": "aabd5d801c98c92ee0bf39aafc8eac5f0f4ca2eb16d1c6f39baeda2c52303d18"
     }
   }
 }

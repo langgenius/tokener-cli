@@ -20,7 +20,7 @@ func TestSnapshotDetectsArtifactDrift(t *testing.T) {
 	snapshot, err := New(
 		root,
 		Source{
-			Repository: "samzong/Recall",
+			Repository: "samzong/rx",
 			Ref:        "main",
 			Revision:   "a45c10e18d4fdf1d15e4b1b3fb11365480750618",
 			Version:    "0.5.7",

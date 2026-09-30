@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultManifest   = "internal/agent/rx.lock.json"
-	defaultRepository = "samzong/Recall"
+	defaultRepository = "samzong/rx"
 	defaultToolchain  = "stable"
 )
 
