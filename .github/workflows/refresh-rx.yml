@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Recall branch, tag, or commit
+        description: rx branch, tag, or commit
         required: true
         default: main
         type: string
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  RX_REPOSITORY: samzong/Recall
+  RX_REPOSITORY: samzong/rx
   RX_RUST_TOOLCHAIN: 1.96.0
 
 concurrency:
@@ -30,7 +30,7 @@ jobs:
       version: ${{ steps.resolve.outputs.version }}
     steps:
       - id: resolve
-        name: Resolve green Recall revision
+        name: Resolve green rx revision
         env:
           GH_TOKEN: ${{ github.token }}
           REQUESTED_REF: ${{ inputs.ref }}
@@ -38,17 +38,17 @@ jobs:
           set -euo pipefail
           requested_ref=$(printf '%s' "$REQUESTED_REF" | xargs)
           if [[ -z "$requested_ref" ]]; then
-            echo "::error::Recall ref is empty"
+            echo "::error::rx ref is empty"
             exit 1
           fi
 
           if [[ "$requested_ref" == "main" ]]; then
             mapfile -t candidates < <(gh api "repos/$RX_REPOSITORY/commits?sha=main&per_page=20" --jq '.[].sha')
-            failure="No green Recall main revision found in the latest 20 commits"
+            failure="No green rx main revision found in the latest 20 commits"
           else
             encoded_ref=$(jq -rn --arg value "$requested_ref" '$value | @uri')
             candidates=("$(gh api "repos/$RX_REPOSITORY/commits/$encoded_ref" --jq '.sha')")
-            failure="Recall revision ${candidates[0]} has no successful check run"
+            failure="rx revision ${candidates[0]} has no successful check run"
           fi
           revision=""
           for candidate in "${candidates[@]}"; do
@@ -66,9 +66,9 @@ jobs:
           fi
 
           cargo_toml=$(gh api "repos/$RX_REPOSITORY/contents/Cargo.toml?ref=$revision" --jq '.content' | tr -d '\n' | base64 --decode)
-          version=$(python3 -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["workspace"]["package"]["version"])' <<<"$cargo_toml")
+          version=$(python3 -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["package"]["version"])' <<<"$cargo_toml")
           if [[ -z "$version" ]]; then
-            echo "::error::Recall version is empty"
+            echo "::error::rx version is empty"
             exit 1
           fi
 
@@ -112,7 +112,7 @@ jobs:
         with:
           repository: ${{ env.RX_REPOSITORY }}
           ref: ${{ needs.resolve.outputs.revision }}
-          path: recall
+          path: rx
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
@@ -122,19 +122,19 @@ jobs:
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          workspaces: recall -> target
+          workspaces: rx -> target
           key: ${{ matrix.target }}
 
       - name: Build rx
         shell: bash
-        working-directory: recall
+        working-directory: rx
         env:
           TARGET: ${{ matrix.target }}
         run: cargo build --locked --release --target "$TARGET" -p rx
 
       - name: Stage and probe rx
         shell: bash
-        working-directory: recall
+        working-directory: rx
         env:
           ASSET: ${{ matrix.asset }}
           BINARY: ${{ matrix.binary }}

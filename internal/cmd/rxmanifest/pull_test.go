@@ -53,8 +53,8 @@ func zipped(t *testing.T, members map[string]string) []byte {
 }
 
 func TestExtractSelectsRXFromReleaseArchives(t *testing.T) {
-	archive := tarGz(t, map[string]string{"recall": "recall-binary", "rx": "rx-binary"})
-	contents, err := extract("recall-macos-aarch64.tar.gz", "rx", archive)
+	archive := tarGz(t, map[string]string{"LICENSE": "license", "rx": "rx-binary"})
+	contents, err := extract("rx-macos-aarch64.tar.gz", "rx", archive)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,8 +62,8 @@ func TestExtractSelectsRXFromReleaseArchives(t *testing.T) {
 		t.Fatalf("extracted %q", contents)
 	}
 
-	windows := zipped(t, map[string]string{"recall.exe": "recall-binary", "rx.exe": "rx-binary"})
-	contents, err = extract("recall-windows-x86_64.zip", "rx.exe", windows)
+	windows := zipped(t, map[string]string{"LICENSE": "license", "rx.exe": "rx-binary"})
+	contents, err = extract("rx-windows-x86_64.zip", "rx.exe", windows)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,34 +73,30 @@ func TestExtractSelectsRXFromReleaseArchives(t *testing.T) {
 }
 
 func TestExtractRejectsArchiveWithoutRX(t *testing.T) {
-	if _, err := extract("recall-linux-x86_64.tar.gz", "rx", tarGz(t, map[string]string{"recall": "recall-binary"})); err == nil {
+	if _, err := extract("rx-linux-x86_64.tar.gz", "rx", tarGz(t, map[string]string{"LICENSE": "license"})); err == nil {
 		t.Fatal("archive without rx was accepted")
 	}
-	if _, err := extract("recall-windows-x86_64.zip", "rx.exe", zipped(t, map[string]string{"recall.exe": "recall-binary"})); err == nil {
+	if _, err := extract("rx-windows-x86_64.zip", "rx.exe", zipped(t, map[string]string{"LICENSE": "license"})); err == nil {
 		t.Fatal("archive without rx.exe was accepted")
 	}
 }
 
-func TestParseWorkspaceVersionIgnoresPackageVersions(t *testing.T) {
+func TestParsePackageVersionReadsOnlyThePackageTable(t *testing.T) {
 	manifest := []byte(`[package]
-name = "recall"
-version.workspace = true
-
-[workspace]
-members = [".", "crates/rx"]
-
-[workspace.package]
-version = "0.6.1"
+name = "rx"
+version = "0.1.0"
+edition = "2024"
 
 [dependencies]
+anyhow = "1"
 clap = { version = "4" }
 `)
-	version, ok := parseWorkspaceVersion(manifest)
-	if !ok || version != "0.6.1" {
+	version, ok := parsePackageVersion(manifest)
+	if !ok || version != "0.1.0" {
 		t.Fatalf("version = %q, ok = %v", version, ok)
 	}
-	if _, ok := parseWorkspaceVersion([]byte("[package]\nversion = \"9.9.9\"\n")); ok {
-		t.Fatal("a manifest without a workspace package version was accepted")
+	if _, ok := parsePackageVersion([]byte("[package]\nversion.workspace = true\n\n[workspace.package]\nversion = \"9.9.9\"\n")); ok {
+		t.Fatal("a manifest without a literal package version was accepted")
 	}
 }
 

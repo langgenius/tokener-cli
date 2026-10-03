@@ -89,17 +89,17 @@ version from `go.mod`; override it with `make cli-sync LATHE_VERSION=vX.Y.Z`.
 ## Dependency updates
 
 ```sh
-make rx-update RX_TAG=v0.6.1   # repin the embedded engines to a Recall release
+make rx-update RX_TAG=v0.1.0   # repin the embedded engines to an rx release
 make lathe-update              # move lathe to its latest version and regenerate
 make lathe-update LATHE_REF=v0.6.2
 ```
 
-`make rx-update` downloads the four `recall-*` archives of that release, keeps
+`make rx-update` downloads the four `rx-*` archives of that release, keeps
 only their `rx` member, rewrites `internal/agent/rx.lock.json` with the tag's
 commit and the new checksums, and verifies the result. All four engines come
 from one release build, so every platform ships the same revision; commit the
 assets and the lock together. `refresh-rx.yml` stays the path for pinning an
-unreleased Recall commit, building the four engines itself and opening the
+unreleased rx commit, building the four engines itself and opening the
 snapshot PR.
 
 `make lathe-update` moves the pin in `go.mod`, the single source for

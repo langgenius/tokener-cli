@@ -29,10 +29,10 @@ type releaseArtifact struct {
 }
 
 var releaseArtifacts = []releaseArtifact{
-	{asset: "recall-macos-x86_64.tar.gz", member: "rx", key: "darwin/amd64"},
-	{asset: "recall-macos-aarch64.tar.gz", member: "rx", key: "darwin/arm64"},
-	{asset: "recall-linux-x86_64.tar.gz", member: "rx", key: "linux/amd64"},
-	{asset: "recall-windows-x86_64.zip", member: "rx.exe", key: "windows/amd64"},
+	{asset: "rx-macos-x86_64.tar.gz", member: "rx", key: "darwin/amd64"},
+	{asset: "rx-macos-aarch64.tar.gz", member: "rx", key: "darwin/arm64"},
+	{asset: "rx-linux-x86_64.tar.gz", member: "rx", key: "linux/amd64"},
+	{asset: "rx-windows-x86_64.zip", member: "rx.exe", key: "windows/amd64"},
 }
 
 var client = &http.Client{Timeout: 5 * time.Minute}
@@ -119,22 +119,22 @@ func resolveRevision(repository, tag string) (string, error) {
 	return object.SHA, nil
 }
 
-var workspaceVersionPattern = regexp.MustCompile(`(?ms)^\[workspace\.package\][^\[]*?^version\s*=\s*"([^"]+)"`)
+var packageVersionPattern = regexp.MustCompile(`(?ms)^\[package\][^\[]*?^version\s*=\s*"([^"]+)"`)
 
 func resolveVersion(repository, revision string) (string, error) {
 	manifest, err := fetch(fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/Cargo.toml", repository, revision))
 	if err != nil {
 		return "", err
 	}
-	version, ok := parseWorkspaceVersion(manifest)
+	version, ok := parsePackageVersion(manifest)
 	if !ok {
-		return "", fmt.Errorf("%s@%s declares no workspace package version", repository, revision)
+		return "", fmt.Errorf("%s@%s declares no package version", repository, revision)
 	}
 	return version, nil
 }
 
-func parseWorkspaceVersion(manifest []byte) (string, bool) {
-	match := workspaceVersionPattern.FindSubmatch(manifest)
+func parsePackageVersion(manifest []byte) (string, bool) {
+	match := packageVersionPattern.FindSubmatch(manifest)
 	if match == nil {
 		return "", false
 	}
