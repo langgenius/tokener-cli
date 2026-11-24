@@ -3,12 +3,11 @@
 package console
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/lathe-cli/lathe/pkg/runtime"
+	"github.com/spf13/cobra"
 )
 
-const generatedSchemaVersion = 16
+const generatedSchemaVersion = 23
 
 func Mount(root *cobra.Command) error {
 	if err := runtime.AssertSchema(generatedSchemaVersion); err != nil {
@@ -25,41 +24,111 @@ func MountFlat(root *cobra.Command) error {
 }
 
 var Specs = []runtime.CommandSpec{
-	{
+	runtime.CommandSpec{
 		Group:           "billing",
 		GroupShort:      "Inspect credits, purchases, and ledger activity",
 		Use:             "balance",
 		Short:           "Show the available Tokener.ai credit balance",
 		Long:            "Shows the purchased, granted, and total available credits for the\nauthenticated organization. Monetary values are returned in micro-USD.\n",
 		Example:         "tokener billing balance\ntokener billing balance -o json\n",
-		SearchTerms:     []string{"credit", "credits"},
 		OperationID:     "balance",
 		Method:          "GET",
 		PathTpl:         "/api/v1/billing/balance",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{DefaultColumns: []string{"availableUsdMicro", "purchasedAvailableUsdMicro", "grantedAvailableUsdMicro", "status", "updatedAt"}, ColumnLabels: map[string]string{"availableUsdMicro": "TOTAL", "grantedAvailableUsdMicro": "GRANTED", "purchasedAvailableUsdMicro": "PURCHASED", "status": "STATUS", "updatedAt": "UPDATED"}, ColumnFormats: map[string]runtime.ColumnFormat{"availableUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}, "grantedAvailableUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}, "purchasedAvailableUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json"},
-		Security:        &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			DefaultColumns: []string{"availableUsdMicro", "purchasedAvailableUsdMicro", "grantedAvailableUsdMicro", "status", "updatedAt"},
+			ColumnLabels:   map[string]string{"availableUsdMicro": "TOTAL", "grantedAvailableUsdMicro": "GRANTED", "purchasedAvailableUsdMicro": "PURCHASED", "status": "STATUS", "updatedAt": "UPDATED"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"availableUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}, "grantedAvailableUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}, "purchasedAvailableUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		SearchTerms: []string{"credit", "credits"},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "billing",
 		GroupShort:      "Inspect credits, purchases, and ledger activity",
 		Use:             "ledger",
 		Short:           "List credit ledger activity",
 		Long:            "Lists the organization's append-only credit ledger. Use --all to follow\nevery page or --cursor to continue from a previously returned page.\nMonetary values are returned in micro-USD.\n",
 		Example:         "tokener billing ledger --limit 25\ntokener billing ledger --all -o json\n",
-		SearchTerms:     []string{"credit", "credits"},
 		OperationID:     "ledger",
 		Method:          "GET",
 		PathTpl:         "/api/v1/billing/ledger",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "Opaque cursor returned by the previous page", Required: false},
-			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "Number of ledger entries per page (1-100)", Required: false},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:   "cursor",
+			Flag:   "cursor",
+			In:     "query",
+			GoType: "string",
+			Help:   "Opaque cursor returned by the previous page",
+		}, runtime.ParamSpec{
+			Name:   "limit",
+			Flag:   "limit",
+			In:     "query",
+			GoType: "int64",
+			Help:   "Number of ledger entries per page (1-100)",
+		}},
+		Output: runtime.OutputHints{
+			ListPath:       "items",
+			DefaultColumns: []string{"occurredAt", "amountUsdMicro", "type", "sourceType", "description", "id"},
+			ColumnLabels:   map[string]string{"amountUsdMicro": "AMOUNT", "description": "DESCRIPTION", "id": "ID", "occurredAt": "TIME", "sourceType": "SOURCE", "type": "TYPE"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"amountUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
+			Pagination: &runtime.PaginationHint{
+				Strategy:   "cursor",
+				TokenParam: "cursor",
+				TokenField: "nextCursor",
+				LimitParam: "limit",
+			},
 		},
-		Output:   runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"occurredAt", "amountUsdMicro", "type", "sourceType", "description", "id"}, ColumnLabels: map[string]string{"amountUsdMicro": "AMOUNT", "description": "DESCRIPTION", "id": "ID", "occurredAt": "TIME", "sourceType": "SOURCE", "type": "TYPE"}, ColumnFormats: map[string]runtime.ColumnFormat{"amountUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		SearchTerms: []string{"credit", "credits"},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "billing",
 		GroupShort:      "Inspect credits, purchases, and ledger activity",
 		Use:             "purchases",
@@ -70,20 +139,63 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/billing/purchases",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "cursor", Flag: "cursor", In: "query", GoType: "string", Help: "Opaque cursor returned by the previous page", Required: false},
-			{Name: "limit", Flag: "limit", In: "query", GoType: "int64", Help: "Number of purchases per page (1-100)", Required: false},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:   "cursor",
+			Flag:   "cursor",
+			In:     "query",
+			GoType: "string",
+			Help:   "Opaque cursor returned by the previous page",
+		}, runtime.ParamSpec{
+			Name:   "limit",
+			Flag:   "limit",
+			In:     "query",
+			GoType: "int64",
+			Help:   "Number of purchases per page (1-100)",
+		}},
+		Output: runtime.OutputHints{
+			ListPath:       "items",
+			DefaultColumns: []string{"createdAt", "status", "amountCents", "creditAmountUsdMicro", "currency", "id"},
+			ColumnLabels:   map[string]string{"amountCents": "PAID", "createdAt": "TIME", "creditAmountUsdMicro": "CREDIT", "currency": "CURRENCY", "id": "ID", "status": "STATUS"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"amountCents": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       2,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 2,
+			}, "creditAmountUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
+			Pagination: &runtime.PaginationHint{
+				Strategy:   "cursor",
+				TokenParam: "cursor",
+				TokenField: "nextCursor",
+				LimitParam: "limit",
+			},
 		},
-		Output:   runtime.OutputHints{ListPath: "items", DefaultColumns: []string{"createdAt", "status", "amountCents", "creditAmountUsdMicro", "currency", "id"}, ColumnLabels: map[string]string{"amountCents": "PAID", "createdAt": "TIME", "creditAmountUsdMicro": "CREDIT", "currency": "CURRENCY", "id": "ID", "status": "STATUS"}, ColumnFormats: map[string]runtime.ColumnFormat{"amountCents": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 2, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 2}, "creditAmountUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json", Pagination: &runtime.PaginationHint{Strategy: "cursor", TokenParam: "cursor", TokenField: "nextCursor", LimitParam: "limit"}},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
 	},
-	{
+	runtime.CommandSpec{
 		Group:      "identity",
 		GroupShort: "Inspect the authenticated management identity",
 		Use:        "whoami",
-		Shortcuts: []runtime.CommandShortcut{
-			{Use: "whoami"},
-		},
+		Shortcuts: []runtime.CommandShortcut{runtime.CommandShortcut{
+			Use: "whoami",
+		}},
 		Short:           "Show the authenticated user and organization",
 		Long:            "Validates the configured management token and shows the user,\norganization, token name, and email-verification state behind it.\n",
 		Example:         "tokener identity whoami\ntokener identity whoami -o json\n",
@@ -91,10 +203,22 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/whoami",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{DefaultColumns: []string{"email", "emailVerified", "tokenName", "organizationId", "userId"}, ColumnLabels: map[string]string{"email": "EMAIL", "emailVerified": "VERIFIED", "organizationId": "ORGANIZATION", "tokenName": "TOKEN", "userId": "USER"}, ResponseMediaType: "application/json"},
-		Security:        &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			DefaultColumns:    []string{"email", "emailVerified", "tokenName", "organizationId", "userId"},
+			ColumnLabels:      map[string]string{"email": "EMAIL", "emailVerified": "VERIFIED", "organizationId": "ORGANIZATION", "tokenName": "TOKEN", "userId": "USER"},
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "keys",
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "create",
@@ -105,19 +229,71 @@ var Specs = []runtime.CommandSpec{
 		Method:          "POST",
 		PathTpl:         "/api/v1/keys",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "name", Flag: "name", In: "body", GoType: "string", Help: "name (body)", Required: false},
-		},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:   "name",
+			Flag:   "name",
+			In:     "body",
+			GoType: "string",
+			Help:   "name (body)",
+		}},
 		RequestBody: &runtime.RequestBody{
-			Required:      true,
-			MediaType:     "application/json",
-			Schema:        &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{Type: "object", Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Enum: []string{"daily", "weekly", "monthly"}, Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Format: "date-time", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "string", Description: "USD decimal string from 0 to 2000000000 with at most 6 fractional digits.", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}}, "name": &runtime.SchemaSpec{Type: "string"}}},
+			Required:  true,
+			MediaType: "application/json",
+			Schema: &runtime.SchemaSpec{
+				Type: "object",
+				Properties: map[string]*runtime.SchemaSpec{"limits": &runtime.SchemaSpec{
+					Type:        "object",
+					Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.",
+					Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{
+						Type:     "array",
+						Nullable: true,
+						Items: &runtime.SchemaSpec{
+							Type: "string",
+						},
+					}, "budgetDuration": &runtime.SchemaSpec{
+						Type:     "string",
+						Nullable: true,
+						Enum:     []string{"daily", "weekly", "monthly"},
+					}, "expiresAt": &runtime.SchemaSpec{
+						Type:     "string",
+						Format:   "date-time",
+						Nullable: true,
+					}, "maxBudgetUsd": &runtime.SchemaSpec{
+						Type:        "string",
+						Description: "USD decimal string from 0 to 2000000000 with at most 6 fractional digits.",
+						Nullable:    true,
+					}, "maxParallelRequests": &runtime.SchemaSpec{
+						Type:     "integer",
+						Nullable: true,
+					}, "rpmLimit": &runtime.SchemaSpec{
+						Type:     "integer",
+						Nullable: true,
+					}, "tpmLimit": &runtime.SchemaSpec{
+						Type:     "integer",
+						Nullable: true,
+					}},
+				}, "name": &runtime.SchemaSpec{
+					Type: "string",
+				}},
+			},
 			SetOnlyFields: []string{"limits"},
 		},
-		Output:   runtime.OutputHints{DefaultColumns: []string{"record.name", "record.prefix", "record.status", "record.id", "record.createdAt"}, ColumnLabels: map[string]string{"record.createdAt": "CREATED", "record.id": "ID", "record.name": "NAME", "record.prefix": "PREFIX", "record.status": "STATUS"}, ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			DefaultColumns:    []string{"record.name", "record.prefix", "record.status", "record.id", "record.createdAt"},
+			ColumnLabels:      map[string]string{"record.createdAt": "CREATED", "record.id": "ID", "record.name": "NAME", "record.prefix": "PREFIX", "record.status": "STATUS"},
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "keys",
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "list",
@@ -128,108 +304,285 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/keys",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "keys", DefaultColumns: []string{"name", "status", "prefix", "spend30d", "limits.maxBudgetUsdMicro", "lastUsedAt", "id"}, ColumnLabels: map[string]string{"id": "ID", "lastUsedAt": "LAST USED", "limits.maxBudgetUsdMicro": "BUDGET", "name": "NAME", "prefix": "PREFIX", "spend30d": "SPEND 30D", "status": "STATUS"}, ColumnFormats: map[string]runtime.ColumnFormat{"limits.maxBudgetUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}, "spend30d": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json"},
-		Security:        &runtime.SecurityHint{},
-	},
-	{
-		Group:      "keys",
-		GroupShort: "Create and manage Tokener.ai API keys",
-		Use:        "reveal",
-		Short:      "Reveal an API key secret",
-		Long:       "Returns the plaintext secret for a key that has not been revoked. The\noutput is sensitive and should not be written to logs or shell history.\n",
-		Example:    "tokener keys reveal <key-id> -o json\n",
-		Notes:      []string{"The output is a credential. Do not write it to logs or shell history."},
-		KnownErrors: []runtime.KnownError{
-			{Status: 400, Cause: "The key is already revoked."},
+		Output: runtime.OutputHints{
+			ListPath:       "keys",
+			DefaultColumns: []string{"name", "status", "prefix", "spend30d", "limits.maxBudgetUsdMicro", "lastUsedAt", "id"},
+			ColumnLabels:   map[string]string{"id": "ID", "lastUsedAt": "LAST USED", "limits.maxBudgetUsdMicro": "BUDGET", "name": "NAME", "prefix": "PREFIX", "spend30d": "SPEND 30D", "status": "STATUS"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"limits.maxBudgetUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}, "spend30d": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
 		},
-		SearchTerms:     []string{"secret"},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+	},
+	runtime.CommandSpec{
+		Group:           "keys",
+		GroupShort:      "Create and manage Tokener.ai API keys",
+		Use:             "reveal",
+		Short:           "Reveal an API key secret",
+		Long:            "Returns the plaintext secret for a key that has not been revoked. The\noutput is sensitive and should not be written to logs or shell history.\n",
+		Example:         "tokener keys reveal <key-id> -o json\n",
 		OperationID:     "reveal",
 		Method:          "POST",
 		PathTpl:         "/api/v1/keys/{id}/reveal",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:     "id",
+			Flag:     "id",
+			Argument: "key-id",
+			In:       "path",
+			GoType:   "string",
+			Help:     "API key ID",
+			Required: true,
+		}},
+		Output: runtime.OutputHints{
+			ResponseMediaType: "application/json",
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		Notes: []string{"The output is a credential. Do not write it to logs or shell history."},
+		KnownErrors: []runtime.KnownError{runtime.KnownError{
+			Status: 400,
+			Cause:  "The key is already revoked.",
+		}},
+		SearchTerms: []string{"secret"},
 	},
-	{
-		Group:      "keys",
-		GroupShort: "Create and manage Tokener.ai API keys",
-		Use:        "revoke",
-		Short:      "Permanently revoke an API key",
-		Long:       "Permanently revokes an API key. A revoked key cannot make model calls or\nhave its plaintext secret revealed again.\n",
-		Example:    "tokener keys revoke <key-id> -o json\n",
-		KnownErrors: []runtime.KnownError{
-			{Status: 400, Cause: "The key is already revoked."},
-		},
+	runtime.CommandSpec{
+		Group:           "keys",
+		GroupShort:      "Create and manage Tokener.ai API keys",
+		Use:             "revoke",
+		Short:           "Permanently revoke an API key",
+		Long:            "Permanently revokes an API key. A revoked key cannot make model calls or\nhave its plaintext secret revealed again.\n",
+		Example:         "tokener keys revoke <key-id> -o json\n",
 		OperationID:     "revoke",
 		Method:          "POST",
 		PathTpl:         "/api/v1/keys/{id}/revoke",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:     "id",
+			Flag:     "id",
+			Argument: "key-id",
+			In:       "path",
+			GoType:   "string",
+			Help:     "API key ID",
+			Required: true,
+		}},
+		Output: runtime.OutputHints{
+			ResponseMediaType: "application/json",
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		KnownErrors: []runtime.KnownError{runtime.KnownError{
+			Status: 400,
+			Cause:  "The key is already revoked.",
+		}},
 	},
-	{
-		Group:      "keys",
-		GroupShort: "Create and manage Tokener.ai API keys",
-		Use:        "set-status",
-		Short:      "Enable or disable an API key",
-		Long:       "Sets an API key to active or disabled. The change may remain in a\npreparing state until model-call enforcement converges.\n",
-		Example:    "tokener keys set-status <key-id> --status disabled -o json\ntokener keys set-status <key-id> --status active -o json\n",
-		KnownErrors: []runtime.KnownError{
-			{Status: 400, Cause: "The key is already revoked."},
-		},
+	runtime.CommandSpec{
+		Group:           "keys",
+		GroupShort:      "Create and manage Tokener.ai API keys",
+		Use:             "set-status",
+		Short:           "Enable or disable an API key",
+		Long:            "Sets an API key to active or disabled. The change may remain in a\npreparing state until model-call enforcement converges.\n",
+		Example:         "tokener keys set-status <key-id> --status disabled -o json\ntokener keys set-status <key-id> --status active -o json\n",
 		OperationID:     "setStatus",
 		Method:          "POST",
 		PathTpl:         "/api/v1/keys/{id}/status",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
-			{Name: "status", Flag: "status", In: "body", GoType: "string", Help: "status (body, required, one of: active|disabled)", Required: true, Enum: []string{"active", "disabled"}},
-		},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:     "id",
+			Flag:     "id",
+			Argument: "key-id",
+			In:       "path",
+			GoType:   "string",
+			Help:     "API key ID",
+			Required: true,
+		}, runtime.ParamSpec{
+			Name:     "status",
+			Flag:     "status",
+			In:       "body",
+			GoType:   "string",
+			Help:     "status (body, required, one of: active|disabled)",
+			Required: true,
+			Enum:     []string{"active", "disabled"},
+		}},
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Properties: map[string]*runtime.SchemaSpec{"status": &runtime.SchemaSpec{Type: "string", Enum: []string{"active", "disabled"}}}, Required: []string{"status"}},
+			Schema: &runtime.SchemaSpec{
+				Type: "object",
+				Properties: map[string]*runtime.SchemaSpec{"status": &runtime.SchemaSpec{
+					Type: "string",
+					Enum: []string{"active", "disabled"},
+				}},
+				Required: []string{"status"},
+			},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		KnownErrors: []runtime.KnownError{runtime.KnownError{
+			Status: 400,
+			Cause:  "The key is already revoked.",
+		}},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "keys",
 		GroupShort:      "Create and manage Tokener.ai API keys",
 		Use:             "replace-limits",
 		Short:           "Replace all limits for an API key",
 		Long:            "Replaces the key's complete budget, rate, model, concurrency, and expiry\nlimit set. This is not a partial update: every omitted or null field is\ncleared. Always provide the complete desired state.\n",
 		Example:         "tokener keys replace-limits <key-id> --file limits.json -o json\ntokener keys replace-limits <key-id> \\\n  --max-budget-usd 100 \\\n  --budget-duration monthly \\\n  --rpm-limit 60 \\\n  --tpm-limit 100000 \\\n  --max-parallel-requests 4 \\\n  --expires-at 2027-01-01T00:00:00Z \\\n  --allowed-models gpt-5 \\\n  -o json\n",
-		Notes:           []string{"This is a full replacement: omitted fields are cleared."},
 		OperationID:     "updateLimits",
 		Method:          "PATCH",
 		PathTpl:         "/api/v1/keys/{id}/limits",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "id", Flag: "id", Argument: "key-id", In: "path", GoType: "string", Help: "API key ID", Required: true},
-			{Name: "allowedModels", Flag: "allowed-models", In: "body", GoType: "[]string", Help: "allowedModels (body)", Required: false},
-			{Name: "budgetDuration", Flag: "budget-duration", In: "body", GoType: "string", Help: "budgetDuration (body, one of: daily|weekly|monthly)", Required: false, Enum: []string{"daily", "weekly", "monthly"}},
-			{Name: "expiresAt", Flag: "expires-at", In: "body", GoType: "string", Help: "expiresAt (body, date-time)", Required: false, Format: "date-time"},
-			{Name: "maxBudgetUsd", Flag: "max-budget-usd", In: "body", GoType: "string", Help: "USD decimal string from 0 to 2000000000 with at most 6 fractional digits. (body)", Required: false},
-			{Name: "maxParallelRequests", Flag: "max-parallel-requests", In: "body", GoType: "int64", Help: "maxParallelRequests (body)", Required: false},
-			{Name: "rpmLimit", Flag: "rpm-limit", In: "body", GoType: "int64", Help: "rpmLimit (body)", Required: false},
-			{Name: "tpmLimit", Flag: "tpm-limit", In: "body", GoType: "int64", Help: "tpmLimit (body)", Required: false},
-		},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:     "id",
+			Flag:     "id",
+			Argument: "key-id",
+			In:       "path",
+			GoType:   "string",
+			Help:     "API key ID",
+			Required: true,
+		}, runtime.ParamSpec{
+			Name:   "allowedModels",
+			Flag:   "allowed-models",
+			In:     "body",
+			GoType: "[]string",
+			Help:   "allowedModels (body)",
+		}, runtime.ParamSpec{
+			Name:   "budgetDuration",
+			Flag:   "budget-duration",
+			In:     "body",
+			GoType: "string",
+			Help:   "budgetDuration (body, one of: daily|weekly|monthly)",
+			Enum:   []string{"daily", "weekly", "monthly"},
+		}, runtime.ParamSpec{
+			Name:   "expiresAt",
+			Flag:   "expires-at",
+			In:     "body",
+			GoType: "string",
+			Help:   "expiresAt (body, date-time)",
+			Format: "date-time",
+		}, runtime.ParamSpec{
+			Name:   "maxBudgetUsd",
+			Flag:   "max-budget-usd",
+			In:     "body",
+			GoType: "string",
+			Help:   "USD decimal string from 0 to 2000000000 with at most 6 fractional digits. (body)",
+		}, runtime.ParamSpec{
+			Name:   "maxParallelRequests",
+			Flag:   "max-parallel-requests",
+			In:     "body",
+			GoType: "int64",
+			Help:   "maxParallelRequests (body)",
+		}, runtime.ParamSpec{
+			Name:   "rpmLimit",
+			Flag:   "rpm-limit",
+			In:     "body",
+			GoType: "int64",
+			Help:   "rpmLimit (body)",
+		}, runtime.ParamSpec{
+			Name:   "tpmLimit",
+			Flag:   "tpm-limit",
+			In:     "body",
+			GoType: "int64",
+			Help:   "tpmLimit (body)",
+		}},
 		RequestBody: &runtime.RequestBody{
 			Required:  true,
 			MediaType: "application/json",
-			Schema:    &runtime.SchemaSpec{Type: "object", Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.", Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{Type: "array", Nullable: true, Items: &runtime.SchemaSpec{Type: "string"}}, "budgetDuration": &runtime.SchemaSpec{Type: "string", Enum: []string{"daily", "weekly", "monthly"}, Nullable: true}, "expiresAt": &runtime.SchemaSpec{Type: "string", Format: "date-time", Nullable: true}, "maxBudgetUsd": &runtime.SchemaSpec{Type: "string", Description: "USD decimal string from 0 to 2000000000 with at most 6 fractional digits.", Nullable: true}, "maxParallelRequests": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "rpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}, "tpmLimit": &runtime.SchemaSpec{Type: "integer", Nullable: true}}},
+			Schema: &runtime.SchemaSpec{
+				Type:        "object",
+				Description: "Full replacement of the key's limits — this is not a partial patch. Every field is optional, but any field omitted or set to null is CLEARED (unlimited / no expiry), not left unchanged. Always send the complete desired limit set.",
+				Properties: map[string]*runtime.SchemaSpec{"allowedModels": &runtime.SchemaSpec{
+					Type:     "array",
+					Nullable: true,
+					Items: &runtime.SchemaSpec{
+						Type: "string",
+					},
+				}, "budgetDuration": &runtime.SchemaSpec{
+					Type:     "string",
+					Nullable: true,
+					Enum:     []string{"daily", "weekly", "monthly"},
+				}, "expiresAt": &runtime.SchemaSpec{
+					Type:     "string",
+					Format:   "date-time",
+					Nullable: true,
+				}, "maxBudgetUsd": &runtime.SchemaSpec{
+					Type:        "string",
+					Description: "USD decimal string from 0 to 2000000000 with at most 6 fractional digits.",
+					Nullable:    true,
+				}, "maxParallelRequests": &runtime.SchemaSpec{
+					Type:     "integer",
+					Nullable: true,
+				}, "rpmLimit": &runtime.SchemaSpec{
+					Type:     "integer",
+					Nullable: true,
+				}, "tpmLimit": &runtime.SchemaSpec{
+					Type:     "integer",
+					Nullable: true,
+				}},
+			},
 		},
-		Output:   runtime.OutputHints{ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		Notes: []string{"This is a full replacement: omitted fields are cleared."},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "models",
 		GroupShort:      "Browse models available through Tokener.ai",
 		Use:             "list",
@@ -241,10 +594,23 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/v1/models",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "models", DefaultColumns: []string{"id", "name", "provider", "context", "inputPer1m", "cachePer1m", "outputPer1m"}, ColumnLabels: map[string]string{"cachePer1m": "CACHE / 1M", "context": "CONTEXT", "id": "MODEL", "inputPer1m": "INPUT / 1M", "name": "NAME", "outputPer1m": "OUTPUT / 1M", "provider": "PROVIDER"}, ResponseMediaType: "application/json"},
-		Security:        &runtime.SecurityHint{},
+		Output: runtime.OutputHints{
+			ListPath:          "models",
+			DefaultColumns:    []string{"id", "name", "provider", "context", "inputPer1m", "cachePer1m", "outputPer1m"},
+			ColumnLabels:      map[string]string{"cachePer1m": "CACHE / 1M", "context": "CONTEXT", "id": "MODEL", "inputPer1m": "INPUT / 1M", "name": "NAME", "outputPer1m": "OUTPUT / 1M", "provider": "PROVIDER"},
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "models",
 		GroupShort:      "Browse models available through Tokener.ai",
 		Use:             "public-model-catalog",
@@ -256,10 +622,15 @@ var Specs = []runtime.CommandSpec{
 		Method:          "GET",
 		PathTpl:         "/api/public/v1/models",
 		DefaultHostname: "console.tokener.dev",
-		Output:          runtime.OutputHints{ListPath: "models", ResponseMediaType: "application/json"},
-		Security:        &runtime.SecurityHint{Public: true},
+		Output: runtime.OutputHints{
+			ListPath:          "models",
+			ResponseMediaType: "application/json",
+		},
+		Security: &runtime.SecurityHint{
+			Public: true,
+		},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "usage",
 		GroupShort:      "Inspect spend and model usage",
 		Use:             "by-model",
@@ -267,18 +638,45 @@ var Specs = []runtime.CommandSpec{
 		Short:           "Show usage grouped by model",
 		Long:            "Aggregates requests, tokens, cache activity, and billed spend by model\nfor a 7- or 30-day window.\n",
 		Example:         "tokener usage by-model\ntokener usage by-model --range 30 -o json\n",
-		SearchTerms:     []string{"spend", "cost"},
 		OperationID:     "breakdown",
 		Method:          "GET",
 		PathTpl:         "/api/v1/usage/breakdown",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:    "range",
+			Flag:    "range",
+			In:      "query",
+			GoType:  "string",
+			Help:    "Usage window in days (7 or 30)",
+			Default: "7",
+			Enum:    []string{"7", "30"},
+		}},
+		Output: runtime.OutputHints{
+			ListPath:       "rows",
+			DefaultColumns: []string{"key", "requests", "inputTokens", "outputTokens", "cacheReadInputTokens", "spendUsdMicro"},
+			ColumnLabels:   map[string]string{"cacheReadInputTokens": "CACHE READ", "inputTokens": "INPUT", "key": "MODEL", "outputTokens": "OUTPUT", "requests": "REQUESTS", "spendUsdMicro": "SPEND"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"spendUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
 		},
-		Output:   runtime.OutputHints{ListPath: "rows", DefaultColumns: []string{"key", "requests", "inputTokens", "outputTokens", "cacheReadInputTokens", "spendUsdMicro"}, ColumnLabels: map[string]string{"cacheReadInputTokens": "CACHE READ", "inputTokens": "INPUT", "key": "MODEL", "outputTokens": "OUTPUT", "requests": "REQUESTS", "spendUsdMicro": "SPEND"}, ColumnFormats: map[string]runtime.ColumnFormat{"spendUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		SearchTerms: []string{"spend", "cost"},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "usage",
 		GroupShort:      "Inspect spend and model usage",
 		Use:             "daily",
@@ -286,33 +684,86 @@ var Specs = []runtime.CommandSpec{
 		Short:           "Show daily usage",
 		Long:            "Shows one usage point per day with per-model segments for a 7- or 30-day\nwindow.\n",
 		Example:         "tokener usage daily\ntokener usage daily --range 30 -o json\n",
-		SearchTerms:     []string{"spend", "cost"},
 		OperationID:     "series",
 		Method:          "GET",
 		PathTpl:         "/api/v1/usage/series",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:    "range",
+			Flag:    "range",
+			In:      "query",
+			GoType:  "string",
+			Help:    "Usage window in days (7 or 30)",
+			Default: "7",
+			Enum:    []string{"7", "30"},
+		}},
+		Output: runtime.OutputHints{
+			ListPath:       "points",
+			DefaultColumns: []string{"day", "requests", "tokens", "spendUsdMicro"},
+			ColumnLabels:   map[string]string{"day": "DAY", "requests": "REQUESTS", "spendUsdMicro": "SPEND", "tokens": "TOKENS"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"spendUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
 		},
-		Output:   runtime.OutputHints{ListPath: "points", DefaultColumns: []string{"day", "requests", "tokens", "spendUsdMicro"}, ColumnLabels: map[string]string{"day": "DAY", "requests": "REQUESTS", "spendUsdMicro": "SPEND", "tokens": "TOKENS"}, ColumnFormats: map[string]runtime.ColumnFormat{"spendUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		SearchTerms: []string{"spend", "cost"},
 	},
-	{
+	runtime.CommandSpec{
 		Group:           "usage",
 		GroupShort:      "Inspect spend and model usage",
 		Use:             "summary",
 		Short:           "Show usage totals",
 		Long:            "Shows total requests, tokens, cache activity, and billed spend for a\n7- or 30-day usage window.\n",
 		Example:         "tokener usage summary\ntokener usage summary --range 30 -o json\n",
-		SearchTerms:     []string{"spend", "cost"},
 		OperationID:     "summary",
 		Method:          "GET",
 		PathTpl:         "/api/v1/usage/summary",
 		DefaultHostname: "console.tokener.dev",
-		Params: []runtime.ParamSpec{
-			{Name: "range", Flag: "range", In: "query", GoType: "string", Help: "Usage window in days (7 or 30)", Required: false, Default: "7", Enum: []string{"7", "30"}},
+		Params: []runtime.ParamSpec{runtime.ParamSpec{
+			Name:    "range",
+			Flag:    "range",
+			In:      "query",
+			GoType:  "string",
+			Help:    "Usage window in days (7 or 30)",
+			Default: "7",
+			Enum:    []string{"7", "30"},
+		}},
+		Output: runtime.OutputHints{
+			DefaultColumns: []string{"summary.requests", "summary.tokens", "summary.spendUsdMicro", "summary.inputTokens", "summary.outputTokens", "summary.cacheReadInputTokens"},
+			ColumnLabels:   map[string]string{"summary.cacheReadInputTokens": "CACHE READ", "summary.inputTokens": "INPUT", "summary.outputTokens": "OUTPUT", "summary.requests": "REQUESTS", "summary.spendUsdMicro": "SPEND", "summary.tokens": "TOKENS"},
+			ColumnFormats: map[string]runtime.ColumnFormat{"summary.spendUsdMicro": runtime.ColumnFormat{
+				Kind:              "currency",
+				Currency:          "USD",
+				SourceScale:       6,
+				Grouping:          true,
+				MinFractionDigits: 2,
+				MaxFractionDigits: 6,
+			}},
+			ResponseMediaType: "application/json",
 		},
-		Output:   runtime.OutputHints{DefaultColumns: []string{"summary.requests", "summary.tokens", "summary.spendUsdMicro", "summary.inputTokens", "summary.outputTokens", "summary.cacheReadInputTokens"}, ColumnLabels: map[string]string{"summary.cacheReadInputTokens": "CACHE READ", "summary.inputTokens": "INPUT", "summary.outputTokens": "OUTPUT", "summary.requests": "REQUESTS", "summary.spendUsdMicro": "SPEND", "summary.tokens": "TOKENS"}, ColumnFormats: map[string]runtime.ColumnFormat{"summary.spendUsdMicro": runtime.ColumnFormat{Kind: "currency", Currency: "USD", SourceScale: 6, Grouping: true, MinFractionDigits: 2, MaxFractionDigits: 6}}, ResponseMediaType: "application/json"},
-		Security: &runtime.SecurityHint{},
+		Security: &runtime.SecurityHint{
+			Requirements: []runtime.SecurityRequirement{runtime.SecurityRequirement{
+				Schemes: []runtime.SecurityScheme{runtime.SecurityScheme{
+					Name:   "managementToken",
+					Type:   "http",
+					Scheme: "bearer",
+				}},
+			}},
+		},
+		SearchTerms: []string{"spend", "cost"},
 	},
 }
