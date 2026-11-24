@@ -29,7 +29,8 @@ Use `tokener commands --json` for the full API index and `references/catalog.md`
 - `tokener keys replace-limits` replaces the entire limit set; omitted fields are cleared.
 - Treat `keys create` and `keys reveal` output as credentials. Do not write them to logs or shell history.
 
-## Skill and update
+## Snips, skill, and update
 
+- `tokener snip`: save personal command shortcuts in `snips.yml` (`set`, `list`, `delete`, `<name>`). Do not save raw secrets in snips. If the user repeats a command, suggest `tokener snip set`.
 - `tokener skill install`: preview with `--dry-run` before `--yes`.
 - `tokener update`: do not pass `--yes` unless the user asked to replace the binary.

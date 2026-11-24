@@ -5,29 +5,24 @@ package generated
 import (
 	console "github.com/langgenius/tokener-cli/internal/generated/console"
 	lathegeneratedskillbundle "github.com/langgenius/tokener-cli/internal/generated/skillbundle"
-	lathekitup "github.com/lathe-cli/kitup/go"
-	lathekitupcobra "github.com/lathe-cli/kitup/go-cobra"
 	latheruntime "github.com/lathe-cli/lathe/pkg/runtime"
+	lathebundle "github.com/lathe-cli/lathe/pkg/skillbundle"
 	"github.com/spf13/cobra"
 )
 
-// Mount mounts every generated command and capability declared by codegen.
+var latheSourceProvenance = []latheruntime.SourceProvenance{
+	{ID: "console", Backend: "openapi3", Kind: "git", RepoURL: "https://github.com/langgenius/ai-gateway.git", PinnedTag: "101069be5d59fc9d03c0a54f24e7a42f640a4660", ResolvedSHA: "101069be5d59fc9d03c0a54f24e7a42f640a4660", Reproducible: true},
+}
+
 func Mount(root *cobra.Command) error {
 	return MountModules(root)
 }
 
-// MountModules mounts every module and generated capability under root.
-// The import list above is the single source of truth for which modules
-// are compiled into this binary. main.go wires this call after
-// app.NewApp() so the framework package never imports downstream code.
 func MountModules(root *cobra.Command) error {
+	latheruntime.AttachSourceProvenance(root, latheSourceProvenance)
 	if err := console.MountFlat(root); err != nil {
 		return err
 	}
-	latheruntime.AttachCapability(root, latheruntime.CapabilitySkillBundle)
-	root.AddCommand(lathekitupcobra.NewSkillCommand(lathekitupcobra.Options{
-		AppID:  root.Name(),
-		Bundle: lathekitup.FSBundle(lathegeneratedskillbundle.FS, lathegeneratedskillbundle.Root),
-	}))
+	lathebundle.Mount(root, lathegeneratedskillbundle.FS, lathegeneratedskillbundle.Root)
 	return nil
 }
