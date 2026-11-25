@@ -37,9 +37,12 @@ jobs:
 
       - name: Generate release notes
         uses: orhun/git-cliff-action@3d96a18cc4ec17e9dc69ddcc424ccafaf1f78ce2
+        env:
+          GIT_CLIFF_IGNORE_TAGS: '.*-(alpha|beta|rc)\..*'
+          GIT_CLIFF_TAG: ${{ github.ref_name }}
         with:
           config: cliff.toml
-          args: --current --strip all --output ${{ runner.temp }}/generated-notes.md
+          args: --strip all --output ${{ runner.temp }}/generated-notes.md
 
       - name: Verify changelog parity
         env:
