@@ -57,6 +57,7 @@ release:
 
 brews:
   - name: tokener
+    skip_upload: auto
     ids:
       - cli
     repository:
