@@ -1,0 +1,39 @@
+[changelog]
+header = "# Changelog\n\n"
+body = """
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}]
+{% for group, commits in commits | group_by(attribute="group") %}
+
+### {{ group }}
+{% for commit in commits -%}
+* {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+"""
+postprocessors = [
+  { pattern = "\\n{3,}", replace = "\n\n" },
+  { pattern = "\\s+\\z", replace = "" },
+  { pattern = "\\A## ", replace = "\n\n## " },
+]
+trim = true
+footer = ""
+
+[git]
+conventional_commits = true
+require_conventional = true
+protect_breaking_commits = true
+commit_parsers = [
+  { message = "^chore\\((release|homebrew)\\)", skip = true },
+  { message = "^Merge ", skip = true },
+  { message = "^[a-z]+(\\(.+\\))?!:", group = "Breaking changes" },
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Fixes" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactors" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^chore|^ci|^build|^test", group = "Maintenance" },
+]
+tag_pattern = "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-(alpha|beta|rc)\\.[1-9][0-9]*)?$"
+sort_commits = "oldest"
